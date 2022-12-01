@@ -2,7 +2,7 @@
 
 ### Status
 
-- [ ] invite team members into this repository
+- [x] invite team members into this repository
 - [ ] invite team members into itslearning group
 - [ ] invite team members into kaggle group
 - [x] add data to repository
