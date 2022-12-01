@@ -4,7 +4,7 @@
 
 - [x] invite team members into this repository
 - [ ] invite team members into itslearning group
-- [ ] invite team members into kaggle group
+- [x] invite team members into kaggle team
 - [x] add data to repository
 - [ ] finish the cpp code
 - [ ] finish the project report
