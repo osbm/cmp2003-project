@@ -23,12 +23,15 @@ class CSV {
     public:
         const string TRAIN_FILEPATH = "data/train.csv";
         const string TEST_FILEPATH = "data/test.csv";
+        // array of column names
+        vector<string> col_names;
         vector<vector<int>> data;
-        vector<vector<int>> read_csv(string filename, int rows);
+        vector<vector<int>> read_csv(string filename);
         int save_csv(string filename, vector<vector<int>> data) const;
         int get_rows(string filename);
         int get_cols(string filename);
         CSV(string subset);
+        
 };
 
 #endif

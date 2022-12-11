@@ -8,39 +8,35 @@
 using namespace std;
 
 
-
-// CSV::CSV(char* subset) {
-//     if (subset == "train") {
-//         data = get_train();
-//     } else if (subset == "test") {
-//         data = get_test();
-//     }
-// }
-
-
-vector<vector<int>> CSV::read_csv(string filename, int rows) {
-    cout << "read_csv called" << endl;
-    cout << "checkpoint 1" << endl;
+vector<vector<int>> CSV::read_csv(string filename) {
 
     ifstream file(filename);
-    cout << "checkpoint 2" << endl;
     string line;
-    cout << "checkpoint 3" << endl;
     vector<vector<int>> data;
-    cout << "checkpoint 4" << endl;
     int i = 0;
-    cout << "checkpoint 5" << endl;
-    while (getline(file, line) && i < rows) {
+    while (getline(file, line)) {
+
         stringstream ss(line);
         string cell;
         vector<int> row;
-        while (getline(ss, cell, DELIM)) {
+
+        i++;
+        if (i == 1) {
+            // set column names
+            while (getline(ss, cell, ',')) {
+                col_names.push_back(cell);
+            }
+            continue;
+
+        }
+
+        while (getline(ss, cell, ',')) {
             row.push_back(stoi(cell));
         }
+
         data.push_back(row);
-        i++;
     }
-    cout << "read_csv finished" << endl;
+
     return data;
 }
 
@@ -82,11 +78,11 @@ int CSV::get_cols(string filename) {
 }
 
 CSV::CSV(string subset) {
-    cout << "CSV constructor called" << endl;
+    
     if (subset == "train") {
-        data = read_csv(TRAIN_FILEPATH, get_rows(TRAIN_FILEPATH));
+        data = read_csv(TRAIN_FILEPATH);
     } else if (subset == "test") {
-        data = read_csv(TEST_FILEPATH, get_rows(TEST_FILEPATH));
+        data = read_csv(TEST_FILEPATH);
     }
-    cout << "CSV constructor finished" << endl;
+    
 }
