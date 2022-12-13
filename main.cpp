@@ -19,7 +19,7 @@ int main() {
 
     // print out data shape
     cout << "Train: " << train_data.size() << " rows, " << train_data[0].size() << " columns" << endl;
-    cout << "Test: " << train_data.size() << " rows, " << train_data[0].size() << " columns" << endl;
+    cout << "Test: " << test_data.size() << " rows, " << test_data[0].size() << " columns" << endl;
 
     // print out column names
     cout << "Column names: ";
@@ -29,12 +29,13 @@ int main() {
     cout << endl;
 
     // get models
-    
 
     // train models
 
     // evaluate and predict models
 
+    // write to submission.csv file
+    
 
     return 0;
 }
