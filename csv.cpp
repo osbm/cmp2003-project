@@ -32,7 +32,7 @@ vector<vector<int>> CSV::read_csv(string filename) {
         }
 
         while (getline(ss, cell, ',')) {
-            row.push_back(stoi(cell));
+            row.push_back(stoi(cell)*2);
         }
 
         data.push_back(row);
