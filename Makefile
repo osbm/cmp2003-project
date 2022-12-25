@@ -4,7 +4,7 @@ CCXX=g++
 
 
 # fast debug
-CFLAGS = -Wall -O3 -DDEBUG
+CFLAGS = -Wall -O3 -DDEBUG #-fstack-check -fstack-protector-all
 
 
 all: main.o csv.o #rmse_metric.o
