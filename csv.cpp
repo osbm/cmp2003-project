@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include "csv.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -85,4 +86,24 @@ CSV::CSV(string subset) {
         data = read_csv(TEST_FILEPATH);
     }
     
+}
+
+int CSV::get_unique_users() {
+    vector<int> users;
+    for (int i = 0; i < data.size(); i++) {
+        users.push_back(data[i][0]);
+    }
+    sort(users.begin(), users.end());
+    users.erase(unique(users.begin(), users.end()), users.end());
+    return users.size();
+}
+
+int CSV::get_unique_items() {
+    vector<int> items;
+    for (int i = 0; i < data.size(); i++) {
+        items.push_back(data[i][1]);
+    }
+    sort(items.begin(), items.end());
+    items.erase(unique(items.begin(), items.end()), items.end());
+    return items.size();
 }
