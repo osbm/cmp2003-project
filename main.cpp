@@ -1,8 +1,12 @@
 
 #include <iostream>
 #include <string>
-// include read_csv
-#include "csv.h"
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <vector>
+
 
 using namespace std;
 
@@ -11,6 +15,112 @@ template <typename T>
 void print(T t) {
     cout << t << endl;
 }
+
+class CSV {
+    private:
+        
+        static const char DELIM = ',';
+        
+    public:
+        const string TRAIN_FILEPATH = "data/train.csv";
+        const string TEST_FILEPATH = "data/test.csv";
+        // array of column names
+        vector<string> col_names;
+        vector<vector<int>> data;
+        vector<vector<int>> read_csv(string filename) {
+            ifstream file(filename);
+            string line;
+            vector<vector<int>> data;
+            int i = 0;
+            while (getline(file, line)) {
+
+                stringstream ss(line);
+                string cell;
+                vector<int> row;
+
+                i++;
+                if (i == 1) {
+                    // set column names
+                    while (getline(ss, cell, ',')) {
+                        col_names.push_back(cell);
+                    }
+                    continue;
+
+                }
+
+                while (getline(ss, cell, ',')) {
+                    row.push_back(stoi(cell)*2);
+                }
+
+                data.push_back(row);
+            }
+
+            return data;
+        }
+        int save_csv(string filename, vector<vector<int>> data) const {
+            ofstream file(filename);
+            for (int i = 0; i < data.size(); i++) {
+                for (int j = 0; j < data[i].size(); j++) {
+                    file << data[i][j];
+                    if (j < data[i].size() - 1) {
+                        file << DELIM;
+                    }
+                }
+                file << endl;
+            }
+            return 0;
+        }
+        int get_rows(string filename) {
+            ifstream file(filename);
+            string line;
+            int rows = 0;
+            while (getline(file, line)) {
+                rows++;
+            }
+            return rows;
+        }
+        int get_cols(string filename) {
+            ifstream file(filename);
+            string line;
+            getline(file, line);
+            stringstream ss(line);
+            string cell;
+            int cols = 0;
+            while (getline(ss, cell, DELIM)) {
+                cols++;
+            }
+            return cols;
+        }
+        int get_unique_users() {
+            vector<int> users;
+            for (int i = 0; i < data.size(); i++) {
+                users.push_back(data[i][0]);
+            }
+            sort(users.begin(), users.end());
+            users.erase(unique(users.begin(), users.end()), users.end());
+            return users.size();
+        }
+        int get_unique_items() {
+            vector<int> items;
+            for (int i = 0; i < data.size(); i++) {
+                items.push_back(data[i][1]);
+            }
+            sort(items.begin(), items.end());
+            items.erase(unique(items.begin(), items.end()), items.end());
+            return items.size();
+        }
+        // void reset_ids();
+        CSV(string subset) {
+            if (subset == "train") {
+                data = read_csv(TRAIN_FILEPATH);
+            } else if (subset == "test") {
+                data = read_csv(TEST_FILEPATH);
+            } else {
+                cout << "Invalid subset" << endl;
+            }
+        }
+        
+};
 
 vector<vector<int>> get_user_item_matrix(vector<vector<int>> data, int num_users, int num_items) {
     vector<vector<int>> user_item_matrix(num_users, vector<int>(num_items, 0));
@@ -27,49 +137,11 @@ int main() {
     CSV train("train");
     CSV test(string("test"));
     
-    // this gives undefined reference to `CSV::CSV(std::string)'
-    // because the constructor is not defined in the header file
-
-    // print out data shape
-    /*
-    cout << "Train: " << train.data.size() << " rows, " << train.data[0].size() << " columns" << endl;
-    cout << "Test: " << test.data.size() << " rows, " << test.data[0].size() << " columns" << endl;
-    */
-
-
-    /*
-    // print  first 4 rows of train data
-    cout << "First 4 rows of train data: " << endl;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < train.data[i].size(); j++) {
-            cout << train.data[i][j] << ", ";
-        }
-        cout << endl;
-    }
-    
-    // print out column names
-    cout << "Column names: ";
-    for (int i = 0; i < train.col_names.size(); i++) {
-        cout << train.col_names[i] << ", ";
-    }
-    cout << endl;
-    */
-
-    // print out number of unique users and items
     int total_unique_users = train.get_unique_users();
     int total_unique_items = train.get_unique_items();
 
-    /*
-    cout << "Number of unique users: " << total_unique_users << endl;
-    cout << "Number of unique items: " << total_unique_items << endl;
-    */
-
     // before we start, we need to reset the IDs of the users and movies
     // so that they are continuous and start from 0
-    // this is because we will use them as indices in a matrix
-    // and we need to be able to access them easily
-
-
     // create a mapping from old user id to new user id
     vector<int> user_id_map(total_unique_users, 0);
     vector<int> item_id_map(total_unique_items, 0);
@@ -87,10 +159,6 @@ int main() {
             new_item_id++;
         }
     }
-
-    // create a mapping from old item id to new item id
-    // for (int i = 0; i < train.data.size(); i++) {
-    // }
 
     print("Done creating mappings");
 
