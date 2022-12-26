@@ -3,6 +3,12 @@
 #include <string>
 // include read_csv
 #include "csv.h"
+#include <vector>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <cmath>
+
 
 using namespace std;
 
@@ -71,47 +77,46 @@ int main() {
 
 
     // create a mapping from old user id to new user id
-    vector<int> user_id_map(total_unique_users, 0);
-    vector<int> item_id_map(total_unique_items, 0);
-    int new_user_id = 0;
-    int new_item_id = 0;
+    set<int> user_ids;
     for (int i = 0; i < train.data.size(); i++) {
-        int old_user_id = train.data[i][0];
-        if (user_id_map[old_user_id] == 0) {
-            user_id_map[old_user_id] = new_user_id;
-            new_user_id++;
-        }
-        int old_item_id = train.data[i][1];
-        if (item_id_map[old_item_id] == 0) {
-            item_id_map[old_item_id] = new_item_id;
-            new_item_id++;
-        }
+        user_ids.insert(train.data[i][0]);
+    }
+    map<int, int> user_id_map;
+    int new_user_id = 0;
+    for (auto it = user_ids.begin(); it != user_ids.end(); it++) {
+        user_id_map[*it] = new_user_id;
+        new_user_id++;
     }
 
     // create a mapping from old item id to new item id
-    // for (int i = 0; i < train.data.size(); i++) {
-    // }
-
-    print("Done creating mappings");
-
-    // now we can reset the IDs
+    set<int> item_ids;
     for (int i = 0; i < train.data.size(); i++) {
-        int old_user_id = train.data[i][0];
-        int old_item_id = train.data[i][1];
-        train.data[i][0] = user_id_map[old_user_id];
-        train.data[i][1] = item_id_map[old_item_id];
+        item_ids.insert(train.data[i][1]);
     }
-    print("Done resetting IDs for train data");
+    map<int, int> item_id_map;
+    int new_item_id = 0;
+    for (auto it = item_ids.begin(); it != item_ids.end(); it++) {
+        item_id_map[*it] = new_item_id;
+        new_item_id++;
+    }
 
+    // now we can reset the IDs of the users and movies
+    for (int i = 0; i < train.data.size(); i++) {
+        train.data[i][0] = user_id_map[train.data[i][0]];
+        train.data[i][1] = item_id_map[train.data[i][1]];
+    }
     for (int i = 0; i < test.data.size(); i++) {
-        int old_user_id = test.data[i][0];
-        int old_item_id = test.data[i][1];
-        test.data[i][0] = user_id_map[old_user_id];
-        test.data[i][1] = item_id_map[old_item_id];
+        test.data[i][0] = user_id_map[test.data[i][0]];
+        test.data[i][1] = item_id_map[test.data[i][1]];
     }
-
-    print("Done resetting IDs for test data");    
     
+    
+    // now we can create a user-item matrix
+
+    vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
+    print(user_item_matrix.size());
+    print(user_item_matrix[0].size());
+
     return 0;
     // why program raises segmentation fault? even though everything has worked
 
