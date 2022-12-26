@@ -107,3 +107,20 @@ int CSV::get_unique_items() {
     items.erase(unique(items.begin(), items.end()), items.end());
     return items.size();
 }
+/*
+void CSV::reset_ids() {
+    vector<int> users;
+    vector<int> items;
+    for (int i = 0; i < data.size(); i++) {
+        users.push_back(data[i][0]);
+        items.push_back(data[i][1]);
+    }
+    sort(users.begin(), users.end());
+    users.erase(unique(users.begin(), users.end()), users.end());
+    sort(items.begin(), items.end());
+    items.erase(unique(items.begin(), items.end()), items.end());
+    for (int i = 0; i < data.size(); i++) {
+        data[i][0] = find(users.begin(), users.end(), data[i][0]) - users.begin();
+        data[i][1] = find(items.begin(), items.end(), data[i][1]) - items.begin();
+    }
+}*/

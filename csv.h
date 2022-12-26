@@ -32,6 +32,7 @@ class CSV {
         int get_cols(string filename);
         int get_unique_users();
         int get_unique_items();
+        // void reset_ids();
         CSV(string subset);
         
 };
