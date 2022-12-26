@@ -31,3 +31,8 @@
 *.out
 *.app
 main
+
+# editor configuration folders
+.vscode
+.idea
+.vs
