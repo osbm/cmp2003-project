@@ -36,3 +36,7 @@ main
 .vscode
 .idea
 .vs
+
+
+# ignore submission files
+submission.csv

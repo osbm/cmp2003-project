@@ -69,7 +69,7 @@ int main() {
     */
 
 
-    /*
+    
     // print  first 4 rows of train data
     cout << "First 4 rows of train data: " << endl;
     for (int i = 0; i < 4; i++) {
@@ -78,14 +78,24 @@ int main() {
         }
         cout << endl;
     }
-    
-    // print out column names
-    cout << "Column names: ";
-    for (int i = 0; i < train.col_names.size(); i++) {
-        cout << train.col_names[i] << ", ";
+
+    // print the first 4 rows of test data
+    cout << "First 4 rows of test data: " << endl;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < test.data[i].size(); j++) {
+            cout << test.data[i][j] << ", ";
+        }
+        cout << endl;
     }
-    cout << endl;
-    */
+
+    
+    // // print out column names
+    // cout << "Column names: ";
+    // for (int i = 0; i < train.col_names.size(); i++) {
+    //     cout << train.col_names[i] << ", ";
+    // }
+    // cout << endl;
+    
 
     // print out number of unique users and items
     int total_unique_users = train.get_unique_users();

@@ -32,7 +32,19 @@ vector<vector<int>> CSV::read_csv(string filename) {
         }
 
         while (getline(ss, cell, ',')) {
-            row.push_back(stoi(cell)*2);
+            // in training data
+            // first two columns are integers and the last column is a float
+            // in test data all columns are integers
+
+            if (cell.find('.') != string::npos) {
+                float f = stof(cell);
+                f = f * 2;
+                int i = f;
+                row.push_back(i);
+            } else {
+                int i = stoi(cell);
+                row.push_back(i);
+            }
         }
 
         data.push_back(row);
@@ -54,7 +66,7 @@ int CSV::save_csv (string filename, vector<vector<int>> data) const {
     }
     return 0;
 }
-
+/*
 int CSV::get_rows(string filename) {
     ifstream file(filename);
     string line;
@@ -77,9 +89,10 @@ int CSV::get_cols(string filename) {
     }
     return cols;
 }
+*/
 
-CSV::CSV(string subset) {
-    
+CSV::CSV(string subset_string) {
+    subset = subset_string;
     if (subset == "train") {
         data = read_csv(TRAIN_FILEPATH);
     } else if (subset == "test") {
