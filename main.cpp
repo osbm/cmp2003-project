@@ -184,6 +184,5 @@ int main() {
     }
 
     return 0;
-    // why program raises segmentation fault? even though everything has worked
 
 }
