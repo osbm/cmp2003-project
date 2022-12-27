@@ -21,8 +21,8 @@ jobs:
 
       - name: Run the code
         run: |
-          make
-          ./main
+          make && ./main
+          
 
       - name: Submit to Kaggle
         run: |

@@ -29,6 +29,29 @@ vector<vector<int>> get_user_item_matrix(vector<vector<int>> data, int num_users
     return user_item_matrix;
 }
 
+vector<vector<int>> cosine_similarity(vector<vector<int>> user_item_matrix) {
+    vector<vector<int>> user_similarity(user_item_matrix.size(), vector<int>(user_item_matrix.size(), 0));
+    for (int i = 0; i < user_item_matrix.size(); i++) {
+        for (int j = 0; j < user_item_matrix.size(); j++) {
+            if (i == j) {
+                user_similarity[i][j] = 1;
+            }
+            else {
+                double dot_product = 0;
+                double norm_a = 0;
+                double norm_b = 0;
+                for (int k = 0; k < user_item_matrix[0].size(); k++) {
+                    dot_product += user_item_matrix[i][k] * user_item_matrix[j][k];
+                    norm_a += user_item_matrix[i][k] * user_item_matrix[i][k];
+                    norm_b += user_item_matrix[j][k] * user_item_matrix[j][k];
+                }
+                user_similarity[i][j] = dot_product / (sqrt(norm_a) * sqrt(norm_b));
+            }
+        }
+    }
+    return user_similarity;
+}
+
 int main() {
     CSV train("train");
     CSV test(string("test"));
@@ -114,8 +137,16 @@ int main() {
     // now we can create a user-item matrix
 
     vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
-    print(user_item_matrix.size());
-    print(user_item_matrix[0].size());
+    // print(user_item_matrix.size());
+    // print(user_item_matrix[0].size());
+
+
+    // use cosine similarity to compute the user_similarity matrix
+    //vector<vector<double>> user_similarity(total_unique_users, vector<double>(total_unique_users, 0));
+    print("before cosine_similarity");
+    vector<vector<int>> user_similarity = cosine_similarity(user_item_matrix);
+    print(user_similarity.size());
+    print(user_similarity[0].size());
 
     return 0;
     // why program raises segmentation fault? even though everything has worked
