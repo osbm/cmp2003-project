@@ -1,7 +1,6 @@
 
 #include <iostream>
 #include <string>
-// include read_csv
 #include "csv.h"
 #include <vector>
 #include <algorithm>
@@ -133,8 +132,8 @@ int main() {
         train.data[i][1] = item_id_map[train.data[i][1]];
     }
     for (int i = 0; i < test.data.size(); i++) {
-        test.data[i][0] = user_id_map[test.data[i][0]];
-        test.data[i][1] = item_id_map[test.data[i][1]];
+        test.data[i][1] = user_id_map[test.data[i][1]];
+        test.data[i][2] = item_id_map[test.data[i][2]];
     }
     
     
@@ -156,8 +155,8 @@ int main() {
 
     // start the inference
     for (int i = 0; i < test.data.size(); i++) {
-        int user_id = test.data[i][0];
-        int item_id = test.data[i][1];
+        int user_id = test.data[i][1];
+        int item_id = test.data[i][2];
         int rating = 0;
         int count = 0;
         for (int j = 0; j < user_similarity[user_id].size(); j++) {
@@ -175,6 +174,12 @@ int main() {
         
         predicted_ratings[i] = rating;
     }
+
+    // return the olf user and item IDs
+    // for (int i = 0; i < test.data.size(); i++) {
+    //     test.data[i][1] = train.user_id_map[test.data[i][2]];
+    //     test.data[i][2] = train.item_id_map[test.data[i][1]];
+    // }
 
     // write the result to a file
     ofstream fout("submission.csv");

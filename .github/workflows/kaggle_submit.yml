@@ -30,6 +30,7 @@ jobs:
 
       - name: Get the last score from Kaggle
         run: |
+          pip install pandas
           python .github/scripts/get_kaggle_score.py ${{ env.COMPETITION_NAME }}
           
       - name: Make a tag including the score
