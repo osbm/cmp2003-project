@@ -30,9 +30,10 @@ vector<vector<int>> get_user_item_matrix(vector<vector<int>> data, int num_users
 }
 
 vector<vector<int>> cosine_similarity(vector<vector<int>> user_item_matrix) {
-    vector<vector<int>> user_similarity(user_item_matrix.size(), vector<int>(user_item_matrix.size(), 0));
-    for (int i = 0; i < user_item_matrix.size(); i++) {
-        for (int j = 0; j < user_item_matrix.size(); j++) {
+    int user_item_matrix_size = user_item_matrix.size();
+    vector<vector<int>> user_similarity(user_item_matrix_size, vector<int>(user_item_matrix_size, 0));
+    for (int i = 0; i < user_item_matrix_size; i++) {
+        for (int j = 0; j < user_item_matrix_size; j++) {
             if (i == j) {
                 user_similarity[i][j] = 1;
             }
@@ -47,6 +48,9 @@ vector<vector<int>> cosine_similarity(vector<vector<int>> user_item_matrix) {
                 }
                 user_similarity[i][j] = dot_product / (sqrt(norm_a) * sqrt(norm_b));
             }
+        }
+        if (i % 100 == 0) {
+            print(i / (double)  user_item_matrix_size);
         }
     }
     return user_similarity;
@@ -145,8 +149,39 @@ int main() {
     //vector<vector<double>> user_similarity(total_unique_users, vector<double>(total_unique_users, 0));
     print("before cosine_similarity");
     vector<vector<int>> user_similarity = cosine_similarity(user_item_matrix);
+    // this tooks the most amount of time
     print(user_similarity.size());
     print(user_similarity[0].size());
+    vector<int> predicted_ratings(test.data.size(), 0);
+
+    // start the inference
+    for (int i = 0; i < test.data.size(); i++) {
+        int user_id = test.data[i][0];
+        int item_id = test.data[i][1];
+        int rating = 0;
+        int count = 0;
+        for (int j = 0; j < user_similarity[user_id].size(); j++) {
+            if (user_similarity[user_id][j] > 0) {
+                rating += user_similarity[user_id][j] * user_item_matrix[j][item_id];
+                count += user_similarity[user_id][j];
+            }
+        }
+        if (count > 0) {
+            rating /= count;
+        }
+        else {
+            rating = 3;
+        }
+        
+        predicted_ratings[i] = rating;
+    }
+
+    // write the result to a file
+    ofstream fout("submission.csv");
+    fout << "Id,Rating" << endl;
+    for (int i = 0; i < test.data.size(); i++) {
+        fout << test.data[i][0] << "," << predicted_ratings[i] << endl;
+    }
 
     return 0;
     // why program raises segmentation fault? even though everything has worked
