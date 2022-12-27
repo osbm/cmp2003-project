@@ -180,7 +180,7 @@ int main() {
     ofstream fout("submission.csv");
     fout << "Id,Rating" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout << test.data[i][0] << "," << predicted_ratings[i] << endl;
+        fout << test.data[i][0] << "," << predicted_ratings[i] / 2.0 << endl;
     }
 
     return 0;
