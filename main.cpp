@@ -172,20 +172,43 @@ int main() {
         int item_id = test.data[i][2];
         float rating = 0;
         int count = 0;
-        for (int j = 0; j < user_similarity[user_id].size(); j++) {
-            if (user_similarity[user_id][j] > 0) {
-                rating += user_similarity[user_id][j] * user_item_matrix[j][item_id];
-                count += user_similarity[user_id][j];
+        vector<float> similarity_scores = user_similarity[user_id];
+        vector<int> movie_ratings = user_item_matrix[item_id];
+        // get the indices of the movies that have been rated by the user
+        vector<int> rated_movie_indices;
+        for (int j = 0; j < movie_ratings.size(); j++) {
+            if (movie_ratings[j] != 0) {
+                rated_movie_indices.push_back(j);
             }
         }
-        if (count > 0) {
-            rating /= count;
+
+        // get the similarity scores of the movies that have been rated by the user
+        vector<float> similarity_scores_of_rated_movies;
+        for (int j = 0; j < rated_movie_indices.size(); j++) {
+            similarity_scores_of_rated_movies.push_back(similarity_scores[rated_movie_indices[j]]);
         }
-        else { // if the user has no similar users, then we just use the average rating of the item
-            rating = 3;
+
+        // get the movie ratings of the movies that have been rated by the user
+        vector<int> movie_ratings_of_rated_movies;
+        for (int j = 0; j < rated_movie_indices.size(); j++) {
+            movie_ratings_of_rated_movies.push_back(movie_ratings[rated_movie_indices[j]]);
         }
-        
+
+        // calculate the weighted average of the movie ratings
+        // dot (similatiry_scores_of_rated_movies, movie_ratings_of_rated_movies) / sum(similarity_scores_of_rated_movies)
+        float numerator = 0;
+        float denominator = 0;
+        for (int j = 0; j < similarity_scores_of_rated_movies.size(); j++) {
+            numerator += similarity_scores_of_rated_movies[j] * movie_ratings_of_rated_movies[j];
+            denominator += similarity_scores_of_rated_movies[j];
+        }
+        if (denominator != 0) {
+            rating = numerator / denominator;
+        }
         predicted_ratings[i] = rating;
+
+
+
     }
 
     // return the olf user and item IDs
