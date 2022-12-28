@@ -28,32 +28,35 @@ vector<vector<int>> get_user_item_matrix(vector<vector<int>> data, int num_users
     return user_item_matrix;
 }
 
-vector<vector<int>> cosine_similarity(vector<vector<int>> user_item_matrix) {
-    int user_item_matrix_size = user_item_matrix.size();
-    vector<vector<int>> user_similarity(user_item_matrix_size, vector<int>(user_item_matrix_size, 0));
-    for (int i = 0; i < user_item_matrix_size; i++) {
-        for (int j = 0; j < user_item_matrix_size; j++) {
-            if (i == j) {
-                user_similarity[i][j] = 1;
-            }
-            else {
-                double dot_product = 0;
-                double norm_a = 0;
-                double norm_b = 0;
-                for (int k = 0; k < user_item_matrix[0].size(); k++) {
-                    dot_product += user_item_matrix[i][k] * user_item_matrix[j][k];
-                    norm_a += user_item_matrix[i][k] * user_item_matrix[i][k];
-                    norm_b += user_item_matrix[j][k] * user_item_matrix[j][k];
-                }
-                user_similarity[i][j] = dot_product / (sqrt(norm_a) * sqrt(norm_b));
-            }
+// write a cosine similarity function that takes in two vectors and returns the cosine similarity
+
+float cosine_similarity(vector<int> v1, vector<int> v2) {
+    float dot_product = 0;
+    float norm1 = 0;
+    float norm2 = 0;
+    for (int i = 0; i < v1.size(); i++) {
+        dot_product += v1[i] * v2[i];
+        norm1 += v1[i] * v1[i];
+        norm2 += v2[i] * v2[i];
+    }
+    return dot_product / (sqrt(norm1) * sqrt(norm2));
+}
+
+
+vector<vector<float>> apply_cosine_similarity(vector<vector<int>> user_item_matrix) {
+    int num_users = user_item_matrix.size();
+    vector<vector<float>> similarity_matrix(num_users, vector<float>(num_users, 0));
+    for (int i = 0; i < num_users; i++) {
+        for (int j = 0; j < num_users; j++) {
+            similarity_matrix[i][j] = cosine_similarity(user_item_matrix[i], user_item_matrix[j]);
         }
         if (i % 100 == 0) {
-            print(i / (double)  user_item_matrix_size);
+            cout << "Done with " << i << " users" << endl;
         }
-    }
-    return user_similarity;
+    }   
+    return similarity_matrix;
 }
+
 
 int main() {
     CSV train("train");
@@ -157,17 +160,17 @@ int main() {
     // use cosine similarity to compute the user_similarity matrix
     //vector<vector<double>> user_similarity(total_unique_users, vector<double>(total_unique_users, 0));
     print("before cosine_similarity");
-    vector<vector<int>> user_similarity = cosine_similarity(user_item_matrix);
+    vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
     // this tooks the most amount of time
-    print(user_similarity.size());
-    print(user_similarity[0].size());
-    vector<int> predicted_ratings(test.data.size(), 0);
+    
+    
+    vector<float> predicted_ratings(test.data.size(), 0);
 
     // start the inference
     for (int i = 0; i < test.data.size(); i++) {
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
-        int rating = 0;
+        float rating = 0;
         int count = 0;
         for (int j = 0; j < user_similarity[user_id].size(); j++) {
             if (user_similarity[user_id][j] > 0) {
@@ -178,7 +181,7 @@ int main() {
         if (count > 0) {
             rating /= count;
         }
-        else {
+        else { // if the user has no similar users, then we just use the average rating of the item
             rating = 3;
         }
         
