@@ -62,17 +62,6 @@ int main() {
     CSV train("train");
     CSV test(string("test"));
     
-    // this gives undefined reference to `CSV::CSV(std::string)'
-    // because the constructor is not defined in the header file
-
-    // print out data shape
-    /*
-    cout << "Train: " << train.data.size() << " rows, " << train.data[0].size() << " columns" << endl;
-    cout << "Test: " << test.data.size() << " rows, " << test.data[0].size() << " columns" << endl;
-    */
-
-
-    
     // print  first 4 rows of train data
     cout << "First 4 rows of train data: " << endl;
     for (int i = 0; i < 4; i++) {
@@ -91,23 +80,8 @@ int main() {
         cout << endl;
     }
 
-    
-    // // print out column names
-    // cout << "Column names: ";
-    // for (int i = 0; i < train.col_names.size(); i++) {
-    //     cout << train.col_names[i] << ", ";
-    // }
-    // cout << endl;
-    
-
-    // print out number of unique users and items
     int total_unique_users = train.get_unique_users();
     int total_unique_items = train.get_unique_items();
-
-    /*
-    cout << "Number of unique users: " << total_unique_users << endl;
-    cout << "Number of unique items: " << total_unique_items << endl;
-    */
 
     // before we start, we need to reset the IDs of the users and movies
     // so that they are continuous and start from 0
@@ -153,16 +127,9 @@ int main() {
     // now we can create a user-item matrix
 
     vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
-    // print(user_item_matrix.size());
-    // print(user_item_matrix[0].size());
-
-
-    // use cosine similarity to compute the user_similarity matrix
-    //vector<vector<double>> user_similarity(total_unique_users, vector<double>(total_unique_users, 0));
-    print("before cosine_similarity");
+    printf("User-item matrix created\n");
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
-    // this tooks the most amount of time
-    
+    printf("User similarity matrix created\n");
     
     vector<float> predicted_ratings(test.data.size(), 0);
 
@@ -210,12 +177,6 @@ int main() {
 
 
     }
-
-    // return the olf user and item IDs
-    // for (int i = 0; i < test.data.size(); i++) {
-    //     test.data[i][1] = train.user_id_map[test.data[i][2]];
-    //     test.data[i][2] = train.item_id_map[test.data[i][1]];
-    // }
 
     // write the result to a file
     ofstream fout("submission.csv");
