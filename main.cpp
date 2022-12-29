@@ -42,13 +42,32 @@ float cosine_similarity(vector<int> v1, vector<int> v2) {
     return dot_product / (sqrt(norm1) * sqrt(norm2));
 }
 
+float pearson_similarity(vector<int> v1, vector<int> v2) {
+    float mean1 = 0;
+    float mean2 = 0;
+    for (int i = 0; i < v1.size(); i++) {
+        mean1 += v1[i];
+        mean2 += v2[i];
+    }
+    mean1 /= v1.size();
+    mean2 /= v2.size();
+    float numerator = 0;
+    float denominator1 = 0;
+    float denominator2 = 0;
+    for (int i = 0; i < v1.size(); i++) {
+        numerator += (v1[i] - mean1) * (v2[i] - mean2);
+        denominator1 += (v1[i] - mean1) * (v1[i] - mean1);
+        denominator2 += (v2[i] - mean2) * (v2[i] - mean2);
+    }
+    return numerator / (sqrt(denominator1) * sqrt(denominator2));
+}
 
 vector<vector<float>> apply_cosine_similarity(vector<vector<int>> user_item_matrix) {
     int num_users = user_item_matrix.size();
     vector<vector<float>> similarity_matrix(num_users, vector<float>(num_users, 0));
     for (int i = 0; i < num_users; i++) {
         for (int j = 0; j < num_users; j++) {
-            similarity_matrix[i][j] = cosine_similarity(user_item_matrix[i], user_item_matrix[j]);
+            similarity_matrix[i][j] = pearson_similarity(user_item_matrix[i], user_item_matrix[j]);
         }
         if (i % 100 == 0) {
             cout << "Done with " << i << " users" << endl;
@@ -140,6 +159,7 @@ int main() {
         float rating = 0;
         vector<float> similarity_scores = user_similarity[user_id];
         vector<int> movie_ratings = user_item_matrix[item_id];
+        
         // get the indices of the movies that have been rated by the user
         vector<int> rated_movie_indices;
         for (int j = 0; j < movie_ratings.size(); j++) {
