@@ -62,12 +62,28 @@ float pearson_similarity(vector<int> v1, vector<int> v2) {
     return numerator / (sqrt(denominator1) * sqrt(denominator2));
 }
 
+// a third similarity function that takes in two vectors
+// and returns the jaccard similarity
+float jaccard_similarity(vector<int> v1, vector<int> v2) {
+    int intersection = 0;
+    int union_set = 0;
+    for (int i = 0; i < v1.size(); i++) {
+        if (v1[i] != 0 && v2[i] != 0) {
+            intersection++;
+        }
+        if (v1[i] != 0 || v2[i] != 0) {
+            union_set++;
+        }
+    }
+    return (float) intersection / union_set;
+}
+
 vector<vector<float>> apply_cosine_similarity(vector<vector<int>> user_item_matrix) {
     int num_users = user_item_matrix.size();
     vector<vector<float>> similarity_matrix(num_users, vector<float>(num_users, 0));
     for (int i = 0; i < num_users; i++) {
         for (int j = 0; j < num_users; j++) {
-            similarity_matrix[i][j] = pearson_similarity(user_item_matrix[i], user_item_matrix[j]);
+            similarity_matrix[i][j] = jaccard_similarity(user_item_matrix[i], user_item_matrix[j]);
         }
         if (i % 100 == 0) {
             cout << "Done with " << i << " users" << endl;
