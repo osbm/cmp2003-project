@@ -122,12 +122,12 @@ int main() {
         test.data[i][1] = user_id_map[test.data[i][1]];
         test.data[i][2] = item_id_map[test.data[i][2]];
     }
-    
-    
-    // now we can create a user-item matrix
+    printf("IDs reset\n");
 
+    // now we can create a user-item matrix
     vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
     printf("User-item matrix created\n");
+
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
     printf("User similarity matrix created\n");
     
@@ -138,7 +138,6 @@ int main() {
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
         float rating = 0;
-        int count = 0;
         vector<float> similarity_scores = user_similarity[user_id];
         vector<int> movie_ratings = user_item_matrix[item_id];
         // get the indices of the movies that have been rated by the user
@@ -173,8 +172,6 @@ int main() {
             rating = numerator / denominator;
         }
         predicted_ratings[i] = rating;
-
-
 
     }
 
