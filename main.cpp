@@ -92,6 +92,45 @@ vector<vector<float>> apply_cosine_similarity(vector<vector<int>>& matrix) {
     return similarity_matrix;
 }
 
+float collaborative_filtering (vector<vector<int>>& user_item_matrix, vector<vector<float>>& user_similarity, int row_id, int col_id) {
+    // this function predicts the rating of a user for an item
+    // could be used for both user-user and item-item collaborative filtering
+
+    int user_id = row_id;
+    int item_id = col_id;
+    float user_based_rating = 0;
+    vector<float> user_similarity_scores = user_similarity[user_id - 1];
+    vector<int> item_ratings = user_item_matrix[item_id];
+    vector<int> rated_item_indices;
+    for (int j = 0; j < item_ratings.size(); j++) {
+        if (item_ratings[j] != 0) {
+            rated_item_indices.push_back(j);
+        }
+    }
+    vector<float> similarity_scores_of_rated_items;
+    for (int j = 0; j < rated_item_indices.size(); j++) {
+        similarity_scores_of_rated_items.push_back(user_similarity_scores[rated_item_indices[j]]);
+    }
+    vector<int> item_ratings_of_rated_items;
+    for (int j = 0; j < rated_item_indices.size(); j++) {
+        item_ratings_of_rated_items.push_back(item_ratings[rated_item_indices[j]]);
+    }
+    float numerator = 0;
+    float denominator = 0;
+    for (int j = 0; j < similarity_scores_of_rated_items.size(); j++) {
+        numerator += similarity_scores_of_rated_items[j] * item_ratings_of_rated_items[j];
+        denominator += similarity_scores_of_rated_items[j];
+    }
+    if (denominator != 0) {
+        user_based_rating = numerator / denominator;
+    } else {
+        user_based_rating = 5;
+    }
+    return user_based_rating;
+    //     ubcf_ratings[i] = user_based_rating;
+    
+}
+
 int main() {
     CSV train("train");
     CSV test(string("test"));
@@ -171,41 +210,60 @@ int main() {
         ubcf_ratings[i] = user_based_rating;
     }
 
+    // vector<float> ubcf_ratings(test.data.size(), 0);
+    // for (int i = 0; i < test.data.size(); i++) {
+    //     int user_id = test.data[i][1];
+    //     int item_id = test.data[i][2];
+        
+    //     ubcf_ratings[i] =  collaborative_filtering(user_item_matrix, user_similarity, user_id, item_id);
+    // }
+
     vector<float> ibcf_ratings(test.data.size(), 0);
     for (int i = 0; i < test.data.size(); i++) {
+     
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
-        float item_based_rating = 0;
+        
         vector<float> item_similarity_scores = item_similarity[item_id - 1];
-        vector<int> user_ratings = item_user_matrix[user_id];
-        vector<int> rated_user_indices;
+
+        // select only the items that the user has rated
+        vector<int> user_ratings = user_item_matrix[user_id];
+        vector<int> rated_item_indices;
         for (int j = 0; j < user_ratings.size(); j++) {
             if (user_ratings[j] != 0) {
-                rated_user_indices.push_back(j);
+                rated_item_indices.push_back(j);
             }
         }
-        vector<float> similarity_scores_of_rated_users;
-        for (int j = 0; j < rated_user_indices.size(); j++) {
-            similarity_scores_of_rated_users.push_back(item_similarity_scores[rated_user_indices[j]]);
-        }
-        vector<int> user_ratings_of_rated_users;
-        for (int j = 0; j < rated_user_indices.size(); j++) {
-            user_ratings_of_rated_users.push_back(user_ratings[rated_user_indices[j]]);
-        }
-        float numerator = 0;
-        float denominator = 0;
-   
-        for (int j = 0; j < similarity_scores_of_rated_users.size(); j++) {
-            numerator += similarity_scores_of_rated_users[j] * user_ratings_of_rated_users[j];
-            denominator += similarity_scores_of_rated_users[j];
+
+        vector<float> similarity_scores_of_rated_items;
+        for (int j = 0; j < rated_item_indices.size(); j++) {
+            similarity_scores_of_rated_items.push_back(item_similarity_scores[rated_item_indices[j]]);
         }
 
+        vector<int> item_ratings_of_rated_items;
+        for (int j = 0; j < rated_item_indices.size(); j++) {
+            item_ratings_of_rated_items.push_back(user_ratings[rated_item_indices[j]]);
+        }
+
+        float numerator = 0;
+        float denominator = 0;
+        for (int j = 0; j < similarity_scores_of_rated_items.size(); j++) {
+            numerator += similarity_scores_of_rated_items[j] * item_ratings_of_rated_items[j];
+            denominator += similarity_scores_of_rated_items[j];
+        }
+
+        float item_based_rating = 0;
         if (denominator != 0) {
             item_based_rating = numerator / denominator;
         } else {
-            item_based_rating = 0;
+            item_based_rating = 5;
         }
+
         ibcf_ratings[i] = item_based_rating;
+        
+
+
+        
     }
 
     vector<float> predicted_ratings(test.data.size(), 0);
@@ -217,7 +275,7 @@ int main() {
     ofstream fout("submission.csv");
     fout << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout << test.data[i][0] << "," << predicted_ratings[i] / 2.0 << endl;
+        fout << test.data[i][0] << "," << ubcf_ratings[i] / 2.0 << endl;
     }
 
     return 0;
