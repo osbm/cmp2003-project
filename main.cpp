@@ -53,51 +53,17 @@ float cosine_similarity(vector<int> v1, vector<int> v2) {
     return dot_product / (sqrt(norm1) * sqrt(norm2));
 }
 
-float pearson_similarity(vector<int> v1, vector<int> v2) {
-    float mean1 = 0;
-    float mean2 = 0;
-    for (int i = 0; i < v1.size(); i++) {
-        mean1 += v1[i];
-        mean2 += v2[i];
-    }
-    mean1 /= v1.size();
-    mean2 /= v2.size();
-    float numerator = 0;
-    float denominator1 = 0;
-    float denominator2 = 0;
-    for (int i = 0; i < v1.size(); i++) {
-        numerator += (v1[i] - mean1) * (v2[i] - mean2);
-        denominator1 += (v1[i] - mean1) * (v1[i] - mean1);
-        denominator2 += (v2[i] - mean2) * (v2[i] - mean2);
-    }
-    return numerator / (sqrt(denominator1) * sqrt(denominator2));
-}
 
-// a third similarity function that takes in two vectors
-// and returns the jaccard similarity
-float jaccard_similarity(vector<int> v1, vector<int> v2) {
-    int intersection = 0;
-    int union_set = 0;
-    for (int i = 0; i < v1.size(); i++) {
-        if (v1[i] != 0 && v2[i] != 0) {
-            intersection++;
-        }
-        if (v1[i] != 0 || v2[i] != 0) {
-            union_set++;
-        }
-    }
-    return (float) intersection / union_set;
-}
 
-vector<vector<float>> apply_cosine_similarity(vector<vector<int>> user_item_matrix) {
-    int num_users = user_item_matrix.size();
-    vector<vector<float>> similarity_matrix(num_users, vector<float>(num_users, 0));
-    for (int i = 0; i < num_users; i++) {
-        for (int j = 0; j < num_users; j++) {
-            similarity_matrix[i][j] = cosine_similarity(user_item_matrix[i], user_item_matrix[j]);
+vector<vector<float>> apply_cosine_similarity(vector<vector<int>> matrix) {
+    int size = matrix.size();
+    vector<vector<float>> similarity_matrix(size, vector<float>(size, 0));
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            similarity_matrix[i][j] = cosine_similarity(matrix[i], matrix[j]);
         }
         if (i % 100 == 0) {
-            cout << "Progress: " << i / num_users << endl;
+            cout << "Progress: " << i / size << endl;
         }
     }   
     return similarity_matrix;
@@ -172,61 +138,91 @@ int main() {
 
     // now we can create a user-item matrix
     vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
-    printf("User-item matrix created\n");
-
+    vector<vector<int>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
+    
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
-    printf("User similarity matrix created\n");
+    vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
     
     vector<float> predicted_ratings(test.data.size(), 0);
 
-    // create a item user matrix
-    vector<vector<int>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
-    printf("Item-user matrix created\n");
-
-    vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
-
-    
 
     // start the inference
     for (int i = 0; i < test.data.size(); i++) {
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
-        float rating = 0;
-        vector<float> user_similarity_scores = user_similarity[user_id];
-        vector<float> item_similarity_scores = item_similarity[item_id];
-
-        vector<int> movie_ratings = user_item_matrix[item_id];
-        vector<int> user_ratings = item_user_matrix[user_id];
         
-        // calculate user based collaborative filtering and item based collaborative filtering ensemble
-        float user_based_cf = 0;
-        float item_based_cf = 0;
-        float user_based_cf_count = 0;
-        float item_based_cf_count = 0;
+        vector<float> user_similarity_scores = user_similarity[user_id - 1];
+        vector<float> item_similarity_scores = item_similarity[item_id - 1];
 
-        for (int j = 0; j < user_similarity_scores.size(); j++) {
-            if (user_similarity_scores[j] > 0 && user_ratings[j] != 0) {
-                user_based_cf += user_similarity_scores[j] * user_ratings[j];
-                user_based_cf_count += user_similarity_scores[j];
+        vector<int> item_ratings = user_item_matrix[item_id];
+        vector<int> user_ratings = item_user_matrix[user_id];
+
+        // get rated user_ids and rated item_ids
+        vector<int> rated_user_ids;
+        vector<int> rated_item_ids;
+
+        for (int j = 0; j < item_ratings.size(); j++) {
+            if (item_ratings[j] != 0) {
+                rated_user_ids.push_back(j);
             }
         }
 
-        for (int j = 0; j < item_similarity_scores.size(); j++) {
-            if (item_similarity_scores[j] > 0 && movie_ratings[j] != 0) {
-                item_based_cf += item_similarity_scores[j] * movie_ratings[j];
-                item_based_cf_count += item_similarity_scores[j];
+        for (int j = 0; j < user_ratings.size(); j++) {
+            if (user_ratings[j] != 0) {
+                rated_item_ids.push_back(j);
             }
         }
 
-        if (user_based_cf_count > 0) {
-            user_based_cf /= user_based_cf_count;
+
+        // get the similarity scores of the rated users and rated items
+        vector<float> rated_user_similarity_scores;
+        vector<float> rated_item_similarity_scores;
+
+        for (int j = 0; j < rated_user_ids.size(); j++) {
+            rated_user_similarity_scores.push_back(user_similarity_scores[rated_user_ids[j]]);
         }
 
-        if (item_based_cf_count > 0) {
-            item_based_cf /= item_based_cf_count;
+        for (int j = 0; j < rated_item_ids.size(); j++) {
+            rated_item_similarity_scores.push_back(item_similarity_scores[rated_item_ids[j]]);
         }
 
-        rating = (user_based_cf + item_based_cf) / 2.0;
+        // get the ratings of the rated users and rated items
+
+        vector<int> user_ratings_of_rated_users;
+        vector<int> item_ratings_of_rated_items;
+
+        for (int j = 0; j < rated_user_ids.size(); j++) {
+            user_ratings_of_rated_users.push_back(user_ratings[rated_user_ids[j]]);
+        }
+
+        for (int j = 0; j < rated_item_ids.size(); j++) {
+            item_ratings_of_rated_items.push_back(item_ratings[rated_item_ids[j]]);
+        }
+
+        // calculate the weighted average of the ratings of the rated users and rated items
+        float user_based = 0;
+        float item_based = 0;
+
+        float user_based_denominator = 0;
+        float item_based_denominator = 0;
+
+        for (int j = 0; j < rated_user_ids.size(); j++) {
+            user_based += rated_user_similarity_scores[j] * user_ratings_of_rated_users[j];
+            user_based_denominator += rated_user_similarity_scores[j];
+        }
+
+        for (int j = 0; j < rated_item_ids.size(); j++) {
+            item_based += rated_item_similarity_scores[j] * item_ratings_of_rated_items[j];
+            item_based_denominator += rated_item_similarity_scores[j];
+        }
+
+        user_based /= user_based_denominator;
+        item_based /= item_based_denominator;
+
+
+        float rating = (user_based + item_based) / 2.0;
+
+        predicted_ratings[i] = rating;
     }
 
     // write the result to a file
