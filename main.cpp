@@ -205,7 +205,8 @@ int main() {
         if (denominator != 0) {
             user_based_rating = numerator / denominator;
         } else {
-            user_based_rating = 5;
+            print("denominator == 0");
+            user_based_rating = 10;
         }
         ubcf_ratings[i] = user_based_rating;
     }
@@ -219,44 +220,52 @@ int main() {
     // }
 
     vector<float> ibcf_ratings(test.data.size(), 0);
-    for (int i = 0; i < test.data.size(); i++) {
+    for (int i = 0; i < 5000; i++) {
      
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
         
         vector<float> item_similarity_scores = item_similarity[item_id - 1];
-
+        print(item_similarity_scores.size());
+        if (item_similarity_scores.size() == 0) {
+            print("item_similarity_scores.size() == 0");
+            print("user_id: " + to_string(user_id));
+            print("item_id: " + to_string(item_id));
+            continue;
+        }
         // select only the items that the user has rated
         vector<int> user_ratings = user_item_matrix[user_id];
+        // print(user_ratings.size());
         vector<int> rated_item_indices;
         for (int j = 0; j < user_ratings.size(); j++) {
             if (user_ratings[j] != 0) {
                 rated_item_indices.push_back(j);
             }
         }
-
+        // print(rated_item_indices.size());
         vector<float> similarity_scores_of_rated_items;
         for (int j = 0; j < rated_item_indices.size(); j++) {
             similarity_scores_of_rated_items.push_back(item_similarity_scores[rated_item_indices[j]]);
         }
-
+        // print(similarity_scores_of_rated_items.size());
         vector<int> item_ratings_of_rated_items;
         for (int j = 0; j < rated_item_indices.size(); j++) {
             item_ratings_of_rated_items.push_back(user_ratings[rated_item_indices[j]]);
         }
-
+        // print(item_ratings_of_rated_items.size());
         float numerator = 0;
         float denominator = 0;
         for (int j = 0; j < similarity_scores_of_rated_items.size(); j++) {
             numerator += similarity_scores_of_rated_items[j] * item_ratings_of_rated_items[j];
             denominator += similarity_scores_of_rated_items[j];
         }
-
+        
         float item_based_rating = 0;
         if (denominator != 0) {
             item_based_rating = numerator / denominator;
         } else {
-            item_based_rating = 5;
+            print("denominator == 0");
+            item_based_rating = 10;
         }
 
         ibcf_ratings[i] = item_based_rating;
