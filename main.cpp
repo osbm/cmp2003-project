@@ -7,7 +7,7 @@
 #include <map>
 #include <set>
 #include <cmath>
-
+#include <unordered_map>
 
 using namespace std;
 
@@ -53,14 +53,40 @@ float cosine_similarity(vector<int> v1, vector<int> v2) {
     return dot_product / (sqrt(norm1) * sqrt(norm2));
 }
 
+float vector_magnitude(vector<int>& vec) {
+    float sum = 0;
+    for (int i : vec) {
+        sum += i * i;
+    }
+    return sqrt(sum);
+}
+
+float dot_product(vector<int>& vec1, vector<int>& vec2) {
+    float sum = 0;
+    for (int i = 0; i < vec1.size(); i++) {
+        sum += vec1[i] * vec2[i];
+    }
+    return sum;
+}
 
 
-vector<vector<float>> apply_cosine_similarity(vector<vector<int>> matrix) {
+vector<vector<float>> apply_cosine_similarity(vector<vector<int>>& matrix) {
     int size = matrix.size();
     vector<vector<float>> similarity_matrix(size, vector<float>(size, 0));
+    unordered_map<int, float> dot_products;
+    unordered_map<int, float> magnitudes;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            similarity_matrix[i][j] = cosine_similarity(matrix[i], matrix[j]);
+            if (i == j) continue;
+            if (dot_products.count(i) == 0) {
+                dot_products[i] = dot_product(matrix[i], matrix[i]);
+                magnitudes[i] = vector_magnitude(matrix[i]);
+            }
+            if (dot_products.count(j) == 0) {
+                dot_products[j] = dot_product(matrix[j], matrix[j]);
+                magnitudes[j] = vector_magnitude(matrix[j]);
+            }
+            similarity_matrix[i][j] = dot_products[i] / (magnitudes[i] * magnitudes[j]);
         }
         if (i % 100 == 0) {
             cout << "Progress: " << i / size << endl;
@@ -68,7 +94,6 @@ vector<vector<float>> apply_cosine_similarity(vector<vector<int>> matrix) {
     }   
     return similarity_matrix;
 }
-
 
 int main() {
     CSV train("train");
