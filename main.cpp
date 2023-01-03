@@ -88,8 +88,8 @@ vector<vector<float>> apply_cosine_similarity(vector<vector<int>>& matrix) {
             }
             similarity_matrix[i][j] = dot_products[i] / (magnitudes[i] * magnitudes[j]);
         }
-        if (i % 100 == 0) {
-            cout << "Progress: " << i / size << endl;
+        if (i % 200 == 0) {
+            cout << "Progress: " << i / (float)size << endl;
         }
     }   
     return similarity_matrix;
@@ -167,6 +167,8 @@ int main() {
     
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
     vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
+
+    printf("Similarity matrices created\n");
     
     vector<float> predicted_ratings(test.data.size(), 0);
 
