@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <cmath>
+#include <unordered_map>
 
 
 using namespace std;
@@ -43,20 +44,47 @@ float cosine_similarity(vector<int> v1, vector<int> v2) {
 }
 
 
-vector<vector<float>> apply_cosine_similarity(vector<vector<int>> user_item_matrix) {
-    int num_users = user_item_matrix.size();
-    vector<vector<float>> similarity_matrix(num_users, vector<float>(num_users, 0));
-    for (int i = 0; i < num_users; i++) {
-        for (int j = 0; j < num_users; j++) {
-            similarity_matrix[i][j] = cosine_similarity(user_item_matrix[i], user_item_matrix[j]);
+float vector_magnitude(vector<int>& vec) {
+    float sum = 0;
+    for (int i : vec) {
+        sum += i * i;
+    }
+    return sqrt(sum);
+}
+
+float dot_product(vector<int>& vec1, vector<int>& vec2) {
+    float sum = 0;
+    for (int i = 0; i < vec1.size(); i++) {
+        sum += vec1[i] * vec2[i];
+    }
+    return sum;
+}
+
+
+vector<vector<float>> apply_cosine_similarity(vector<vector<int>>& matrix) {
+    int size = matrix.size();
+    vector<vector<float>> similarity_matrix(size, vector<float>(size, 0));
+    unordered_map<int, float> dot_products;
+    unordered_map<int, float> magnitudes;
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (i == j) similarity_matrix[i][j] = 1;
+            if (dot_products.count(i) == 0) {
+                dot_products[i] = dot_product(matrix[i], matrix[i]);
+                magnitudes[i] = vector_magnitude(matrix[i]);
+            }
+            if (dot_products.count(j) == 0) {
+                dot_products[j] = dot_product(matrix[j], matrix[j]);
+                magnitudes[j] = vector_magnitude(matrix[j]);
+            }
+            similarity_matrix[i][j] = dot_products[i] / (magnitudes[i] * magnitudes[j]);
         }
-        if (i % 100 == 0) {
-            cout << "Done with " << i << " users" << endl;
+        if (i % 200 == 0) {
+            cout << "Progress: " << i / (float)size << endl;
         }
     }   
     return similarity_matrix;
 }
-
 
 int main() {
     CSV train("train");
@@ -170,42 +198,48 @@ int main() {
     for (int i = 0; i < test.data.size(); i++) {
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
-        float rating = 0;
-        int count = 0;
-        vector<float> similarity_scores = user_similarity[user_id];
-        vector<int> movie_ratings = user_item_matrix[item_id];
-        // get the indices of the movies that have been rated by the user
-        vector<int> rated_movie_indices;
-        for (int j = 0; j < movie_ratings.size(); j++) {
-            if (movie_ratings[j] != 0) {
-                rated_movie_indices.push_back(j);
+        float user_based_rating = 0;
+        float item_based_rating = 0;
+        
+        vector<float> user_similarity_scores = user_similarity[user_id];
+        vector<int> item_ratings = user_item_matrix[item_id];
+        // get the indices of the items that have been rated by the user
+        vector<int> rated_item_indices;
+        for (int j = 0; j < item_ratings.size(); j++) {
+            if (item_ratings[j] != 0) {
+                rated_item_indices.push_back(j);
             }
         }
 
-        // get the similarity scores of the movies that have been rated by the user
-        vector<float> similarity_scores_of_rated_movies;
-        for (int j = 0; j < rated_movie_indices.size(); j++) {
-            similarity_scores_of_rated_movies.push_back(similarity_scores[rated_movie_indices[j]]);
+        // get the similarity scores of the items that have been rated by the user
+        vector<float> similarity_scores_of_rated_items;
+        for (int j = 0; j < rated_item_indices.size(); j++) {
+            similarity_scores_of_rated_items.push_back(user_similarity_scores[rated_item_indices[j]]);
         }
 
-        // get the movie ratings of the movies that have been rated by the user
-        vector<int> movie_ratings_of_rated_movies;
-        for (int j = 0; j < rated_movie_indices.size(); j++) {
-            movie_ratings_of_rated_movies.push_back(movie_ratings[rated_movie_indices[j]]);
+        // get the item ratings of the items that have been rated by the user
+        vector<int> item_ratings_of_rated_items;
+        for (int j = 0; j < rated_item_indices.size(); j++) {
+            item_ratings_of_rated_items.push_back(item_ratings[rated_item_indices[j]]);
         }
 
-        // calculate the weighted average of the movie ratings
-        // dot (similatiry_scores_of_rated_movies, movie_ratings_of_rated_movies) / sum(similarity_scores_of_rated_movies)
+        // calculate the weighted average of the item ratings
+        // dot (similatiry_scores_of_rated_items, item_ratings_of_rated_items) / sum(similarity_scores_of_rated_items)
         float numerator = 0;
         float denominator = 0;
-        for (int j = 0; j < similarity_scores_of_rated_movies.size(); j++) {
-            numerator += similarity_scores_of_rated_movies[j] * movie_ratings_of_rated_movies[j];
-            denominator += similarity_scores_of_rated_movies[j];
+        for (int j = 0; j < similarity_scores_of_rated_items.size(); j++) {
+            numerator += similarity_scores_of_rated_items[j] * item_ratings_of_rated_items[j];
+            denominator += similarity_scores_of_rated_items[j];
         }
+
         if (denominator != 0) {
-            rating = numerator / denominator;
+            user_based_rating = numerator / denominator;
+        } else {
+            user_based_rating = 0;
         }
-        predicted_ratings[i] = rating;
+        predicted_ratings[i] = user_based_rating;
+        // now item-based rating
+
 
 
 
@@ -218,6 +252,7 @@ int main() {
     // }
 
     // write the result to a file
+    printf("Writing the result to a file...\n");
     ofstream fout("submission.csv");
     fout << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
