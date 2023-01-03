@@ -29,6 +29,17 @@ vector<vector<int>> get_user_item_matrix(vector<vector<int>> data, int num_users
     return user_item_matrix;
 }
 
+vector<vector<int>> get_item_user_matrix(vector<vector<int>> data, int num_users, int num_items) {
+    vector<vector<int>> item_user_matrix(num_items, vector<int>(num_users, 0));
+    for (int i = 0; i < data.size(); i++) {
+        int user = data[i][0];
+        int item = data[i][1];
+        int rating = data[i][2];
+        item_user_matrix[item][user] = rating;
+    }
+    return item_user_matrix;
+}
+
 // write a cosine similarity function that takes in two vectors and returns the cosine similarity
 
 float cosine_similarity(vector<int> v1, vector<int> v2) {
@@ -181,6 +192,7 @@ int main() {
     // now we can create a user-item matrix
 
     vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
+    vector<vector<int>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
     // print(user_item_matrix.size());
     // print(user_item_matrix[0].size());
 
@@ -189,20 +201,24 @@ int main() {
     //vector<vector<double>> user_similarity(total_unique_users, vector<double>(total_unique_users, 0));
     print("before cosine_similarity");
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
+    vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
     // this tooks the most amount of time
     
+    print ("after cosine_similarity");
     
-    vector<float> predicted_ratings(test.data.size(), 0);
+    vector<float> ubcf_ratings(test.data.size(), 0);
 
     // start the inference
     for (int i = 0; i < test.data.size(); i++) {
+        printf("Inference");
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
+
         float user_based_rating = 0;
-        float item_based_rating = 0;
-        
-        vector<float> user_similarity_scores = user_similarity[user_id];
+
+        vector<float> user_similarity_scores = user_similarity[user_id - 1];
         vector<int> item_ratings = user_item_matrix[item_id];
+        
         // get the indices of the items that have been rated by the user
         vector<int> rated_item_indices;
         for (int j = 0; j < item_ratings.size(); j++) {
@@ -211,18 +227,21 @@ int main() {
             }
         }
 
+        
         // get the similarity scores of the items that have been rated by the user
         vector<float> similarity_scores_of_rated_items;
         for (int j = 0; j < rated_item_indices.size(); j++) {
             similarity_scores_of_rated_items.push_back(user_similarity_scores[rated_item_indices[j]]);
         }
 
+        
         // get the item ratings of the items that have been rated by the user
         vector<int> item_ratings_of_rated_items;
         for (int j = 0; j < rated_item_indices.size(); j++) {
             item_ratings_of_rated_items.push_back(item_ratings[rated_item_indices[j]]);
         }
 
+        
         // calculate the weighted average of the item ratings
         // dot (similatiry_scores_of_rated_items, item_ratings_of_rated_items) / sum(similarity_scores_of_rated_items)
         float numerator = 0;
@@ -235,15 +254,74 @@ int main() {
         if (denominator != 0) {
             user_based_rating = numerator / denominator;
         } else {
-            user_based_rating = 0;
+            user_based_rating = 5;
         }
-        predicted_ratings[i] = user_based_rating;
-        // now item-based rating
-
-
-
-
+        ubcf_ratings[i] = user_based_rating;
     }
+
+    vector<float> ibcf_ratings(test.data.size(), 0);
+    for (int i = 0; i < test.data.size(); i++) {
+        int user_id = test.data[i][1];
+        int item_id = test.data[i][2];
+
+        
+        float item_based_rating = 0;
+        
+        
+        vector<float> item_similarity_scores = item_similarity[item_id - 1];
+
+
+        
+        vector<int> user_ratings = item_user_matrix[user_id];
+        // get the indices of the items that have been rated by the user
+        vector<int> rated_user_indices;
+        for (int j = 0; j < user_ratings.size(); j++) {
+            if (user_ratings[j] != 0) {
+                rated_user_indices.push_back(j);
+            }
+        }
+
+        // get the similarity scores of the items that have been rated b
+
+        vector<float> similarity_scores_of_rated_users;
+        for (int j = 0; j < rated_user_indices.size(); j++) {
+            similarity_scores_of_rated_users.push_back(item_similarity_scores[rated_user_indices[j]]);
+        }
+
+        // get the item ratings of the items that have been rated by the user
+    
+
+        vector<int> user_ratings_of_rated_users;
+        for (int j = 0; j < rated_user_indices.size(); j++) {
+            user_ratings_of_rated_users.push_back(user_ratings[rated_user_indices[j]]);
+        }
+
+        // calculate the weighted average of the item ratings
+        // dot (similatiry_scores_of_rated_items, item_ratings_of_rated_items) / sum(similarity_scores_of_rated_items)
+        float numerator = 0;
+        float denominator = 0;
+   
+        for (int j = 0; j < similarity_scores_of_rated_users.size(); j++) {
+            numerator += similarity_scores_of_rated_users[j] * user_ratings_of_rated_users[j];
+            denominator += similarity_scores_of_rated_users[j];
+        }
+
+        if (denominator != 0) {
+            item_based_rating = numerator / denominator;
+        } else {
+            item_based_rating = 0;
+        }
+        ibcf_ratings[i] = item_based_rating;
+    }
+
+
+    // take the average of the two ratings
+    vector<float> predicted_ratings(test.data.size(), 0);
+    for (int i = 0; i < test.data.size(); i++) {
+        predicted_ratings[i] = (ubcf_ratings[i] + ibcf_ratings[i]) / 2.0;
+    }
+
+
 
     // return the olf user and item IDs
     // for (int i = 0; i < test.data.size(); i++) {
