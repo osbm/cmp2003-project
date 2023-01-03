@@ -9,10 +9,8 @@
 #include <cmath>
 #include <unordered_map>
 
-
 using namespace std;
 
-// lets write a print function to print everything like python
 template <typename T>
 void print(T t) {
     cout << t << endl;
@@ -40,8 +38,6 @@ vector<vector<int>> get_item_user_matrix(vector<vector<int>> data, int num_users
     return item_user_matrix;
 }
 
-// write a cosine similarity function that takes in two vectors and returns the cosine similarity
-
 float cosine_similarity(vector<int> v1, vector<int> v2) {
     float dot_product = 0;
     float norm1 = 0;
@@ -53,7 +49,6 @@ float cosine_similarity(vector<int> v1, vector<int> v2) {
     }
     return dot_product / (sqrt(norm1) * sqrt(norm2));
 }
-
 
 float vector_magnitude(vector<int>& vec) {
     float sum = 0;
@@ -101,60 +96,9 @@ int main() {
     CSV train("train");
     CSV test(string("test"));
     
-    // this gives undefined reference to `CSV::CSV(std::string)'
-    // because the constructor is not defined in the header file
-
-    // print out data shape
-    /*
-    cout << "Train: " << train.data.size() << " rows, " << train.data[0].size() << " columns" << endl;
-    cout << "Test: " << test.data.size() << " rows, " << test.data[0].size() << " columns" << endl;
-    */
-
-
-    
-    // print  first 4 rows of train data
-    cout << "First 4 rows of train data: " << endl;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < train.data[i].size(); j++) {
-            cout << train.data[i][j] << ", ";
-        }
-        cout << endl;
-    }
-
-    // print the first 4 rows of test data
-    cout << "First 4 rows of test data: " << endl;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < test.data[i].size(); j++) {
-            cout << test.data[i][j] << ", ";
-        }
-        cout << endl;
-    }
-
-    
-    // // print out column names
-    // cout << "Column names: ";
-    // for (int i = 0; i < train.col_names.size(); i++) {
-    //     cout << train.col_names[i] << ", ";
-    // }
-    // cout << endl;
-    
-
-    // print out number of unique users and items
     int total_unique_users = train.get_unique_users();
     int total_unique_items = train.get_unique_items();
 
-    /*
-    cout << "Number of unique users: " << total_unique_users << endl;
-    cout << "Number of unique items: " << total_unique_items << endl;
-    */
-
-    // before we start, we need to reset the IDs of the users and movies
-    // so that they are continuous and start from 0
-    // this is because we will use them as indices in a matrix
-    // and we need to be able to access them easily
-
-
-    // create a mapping from old user id to new user id
     set<int> user_ids;
     for (int i = 0; i < train.data.size(); i++) {
         user_ids.insert(train.data[i][0]);
@@ -166,7 +110,6 @@ int main() {
         new_user_id++;
     }
 
-    // create a mapping from old item id to new item id
     set<int> item_ids;
     for (int i = 0; i < train.data.size(); i++) {
         item_ids.insert(train.data[i][1]);
@@ -178,7 +121,6 @@ int main() {
         new_item_id++;
     }
 
-    // now we can reset the IDs of the users and movies
     for (int i = 0; i < train.data.size(); i++) {
         train.data[i][0] = user_id_map[train.data[i][0]];
         train.data[i][1] = item_id_map[train.data[i][1]];
@@ -187,70 +129,40 @@ int main() {
         test.data[i][1] = user_id_map[test.data[i][1]];
         test.data[i][2] = item_id_map[test.data[i][2]];
     }
-    
-    
-    // now we can create a user-item matrix
 
     vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
     vector<vector<int>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
-    // print(user_item_matrix.size());
-    // print(user_item_matrix[0].size());
-
-
-    // use cosine similarity to compute the user_similarity matrix
-    //vector<vector<double>> user_similarity(total_unique_users, vector<double>(total_unique_users, 0));
-    print("before cosine_similarity");
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
     vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
-    // this tooks the most amount of time
-    
-    print ("after cosine_similarity");
     
     vector<float> ubcf_ratings(test.data.size(), 0);
-
-    // start the inference
     for (int i = 0; i < test.data.size(); i++) {
-        printf("Inference");
+        printf("Inference progress: %d/%d\r", i, test.data.size());
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
-
         float user_based_rating = 0;
-
         vector<float> user_similarity_scores = user_similarity[user_id - 1];
         vector<int> item_ratings = user_item_matrix[item_id];
-        
-        // get the indices of the items that have been rated by the user
         vector<int> rated_item_indices;
         for (int j = 0; j < item_ratings.size(); j++) {
             if (item_ratings[j] != 0) {
                 rated_item_indices.push_back(j);
             }
         }
-
-        
-        // get the similarity scores of the items that have been rated by the user
         vector<float> similarity_scores_of_rated_items;
         for (int j = 0; j < rated_item_indices.size(); j++) {
             similarity_scores_of_rated_items.push_back(user_similarity_scores[rated_item_indices[j]]);
         }
-
-        
-        // get the item ratings of the items that have been rated by the user
         vector<int> item_ratings_of_rated_items;
         for (int j = 0; j < rated_item_indices.size(); j++) {
             item_ratings_of_rated_items.push_back(item_ratings[rated_item_indices[j]]);
         }
-
-        
-        // calculate the weighted average of the item ratings
-        // dot (similatiry_scores_of_rated_items, item_ratings_of_rated_items) / sum(similarity_scores_of_rated_items)
         float numerator = 0;
         float denominator = 0;
         for (int j = 0; j < similarity_scores_of_rated_items.size(); j++) {
             numerator += similarity_scores_of_rated_items[j] * item_ratings_of_rated_items[j];
             denominator += similarity_scores_of_rated_items[j];
         }
-
         if (denominator != 0) {
             user_based_rating = numerator / denominator;
         } else {
@@ -263,41 +175,23 @@ int main() {
     for (int i = 0; i < test.data.size(); i++) {
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
-
-        
         float item_based_rating = 0;
-        
-        
         vector<float> item_similarity_scores = item_similarity[item_id - 1];
-
-
-        
         vector<int> user_ratings = item_user_matrix[user_id];
-        // get the indices of the items that have been rated by the user
         vector<int> rated_user_indices;
         for (int j = 0; j < user_ratings.size(); j++) {
             if (user_ratings[j] != 0) {
                 rated_user_indices.push_back(j);
             }
         }
-
-        // get the similarity scores of the items that have been rated b
-
         vector<float> similarity_scores_of_rated_users;
         for (int j = 0; j < rated_user_indices.size(); j++) {
             similarity_scores_of_rated_users.push_back(item_similarity_scores[rated_user_indices[j]]);
         }
-
-        // get the item ratings of the items that have been rated by the user
-    
-
         vector<int> user_ratings_of_rated_users;
         for (int j = 0; j < rated_user_indices.size(); j++) {
             user_ratings_of_rated_users.push_back(user_ratings[rated_user_indices[j]]);
         }
-
-        // calculate the weighted average of the item ratings
-        // dot (similatiry_scores_of_rated_items, item_ratings_of_rated_items) / sum(similarity_scores_of_rated_items)
         float numerator = 0;
         float denominator = 0;
    
@@ -314,22 +208,11 @@ int main() {
         ibcf_ratings[i] = item_based_rating;
     }
 
-
-    // take the average of the two ratings
     vector<float> predicted_ratings(test.data.size(), 0);
     for (int i = 0; i < test.data.size(); i++) {
         predicted_ratings[i] = (ubcf_ratings[i] + ibcf_ratings[i]) / 2.0;
     }
 
-
-
-    // return the olf user and item IDs
-    // for (int i = 0; i < test.data.size(); i++) {
-    //     test.data[i][1] = train.user_id_map[test.data[i][2]];
-    //     test.data[i][2] = train.item_id_map[test.data[i][1]];
-    // }
-
-    // write the result to a file
     printf("Writing the result to a file...\n");
     ofstream fout("submission.csv");
     fout << "Id,Predicted" << endl;
