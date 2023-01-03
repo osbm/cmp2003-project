@@ -77,7 +77,7 @@ vector<vector<float>> apply_cosine_similarity(vector<vector<int>>& matrix) {
     unordered_map<int, float> magnitudes;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            if (i == j) continue;
+            if (i == j) similarity_matrix[i][j] = 1;
             if (dot_products.count(i) == 0) {
                 dot_products[i] = dot_product(matrix[i], matrix[i]);
                 magnitudes[i] = vector_magnitude(matrix[i]);
@@ -174,19 +174,30 @@ int main() {
 
 
     // start the inference
+    printf("Starting inference\n");
     for (int i = 0; i < test.data.size(); i++) {
+
+        if (i % 100 == 0) {
+            cout << "Progress: " << i / 5000.0 << endl;
+        }
+        printf("error catcher 1\n");
+
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
-        
+        printf("error catcher 2\n");
         vector<float> user_similarity_scores = user_similarity[user_id - 1];
         vector<float> item_similarity_scores = item_similarity[item_id - 1];
+        printf("error catcher 3\n");
 
         vector<int> item_ratings = user_item_matrix[item_id];
         vector<int> user_ratings = item_user_matrix[user_id];
+        printf("error catcher 4\n");
 
+        printf("error catcher 5\n");
         // get rated user_ids and rated item_ids
         vector<int> rated_user_ids;
         vector<int> rated_item_ids;
+        printf("error catcher 6\n");
 
         for (int j = 0; j < item_ratings.size(); j++) {
             if (item_ratings[j] != 0) {
@@ -200,7 +211,7 @@ int main() {
             }
         }
 
-
+        printf("error catcher 7");
         // get the similarity scores of the rated users and rated items
         vector<float> rated_user_similarity_scores;
         vector<float> rated_item_similarity_scores;
@@ -213,6 +224,7 @@ int main() {
             rated_item_similarity_scores.push_back(item_similarity_scores[rated_item_ids[j]]);
         }
 
+        printf("error catcher 8");
         // get the ratings of the rated users and rated items
 
         vector<int> user_ratings_of_rated_users;
@@ -225,7 +237,7 @@ int main() {
         for (int j = 0; j < rated_item_ids.size(); j++) {
             item_ratings_of_rated_items.push_back(item_ratings[rated_item_ids[j]]);
         }
-
+        printf("error catcher 9");
         // calculate the weighted average of the ratings of the rated users and rated items
         float user_based = 0;
         float item_based = 0;
@@ -245,13 +257,13 @@ int main() {
 
         user_based /= user_based_denominator;
         item_based /= item_based_denominator;
-
+        printf("error catcher 10");
 
         float rating = (user_based + item_based) / 2.0;
 
         predicted_ratings[i] = rating;
     }
-
+    printf("Inference complete\n");
     // write the result to a file
     ofstream fout("submission.csv");
     fout << "Id,Predicted" << endl;
