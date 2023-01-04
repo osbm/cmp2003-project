@@ -18,6 +18,7 @@ main.o: main.cpp csv.o
 
 clean:
 	rm -f *.o main
+	rm -f *.csv
 
 csv.o: csv.cpp csv.h
 
