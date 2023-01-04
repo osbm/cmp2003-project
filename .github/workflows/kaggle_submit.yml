@@ -23,6 +23,11 @@ jobs:
         run: |
           make && ./main
           
+      - name: Upload the submission file
+        uses: actions/upload-artifact@v2
+        with:
+          name: submission
+          path: submission.csv
 
       - name: Submit to Kaggle
         run: |

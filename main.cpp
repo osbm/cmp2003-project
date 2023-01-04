@@ -38,7 +38,7 @@ vector<vector<double>> get_item_user_matrix(vector<vector<int>> data, int num_us
     return item_user_matrix;
 }
 
-double cosine_similarity(vector<int> v1, vector<int> v2) {
+double cosine_similarity(vector<double> v1, vector<double> v2) {
     double dot_product = 0;
     double norm1 = 0;
     double norm2 = 0;
@@ -67,39 +67,23 @@ double dot_product(vector<double>& vec1, vector<double>& vec2) {
 }
 
 
-vector<vector<double>> apply_cosine_similarity(vector<vector<double>>& matrix) {
-    int size = matrix.size();
-    vector<vector<double>> similarity_matrix(size, vector<double>(size, 0));
-    unordered_map<int, double> dot_products;
-    unordered_map<int, double> magnitudes;
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            if (i == j) {
-                similarity_matrix[i][j] = 1;
-                continue;
-            }
-            
-            if (dot_products.count(i) == 0) {
-                dot_products[i] = dot_product(matrix[i], matrix[i]);
-                magnitudes[i] = vector_magnitude(matrix[i]);
-            }
-            if (dot_products.count(j) == 0) {
-                dot_products[j] = dot_product(matrix[j], matrix[j]);
-                magnitudes[j] = vector_magnitude(matrix[j]);
-            }
-            similarity_matrix[i][j] = dot_products[i] / (magnitudes[i] * magnitudes[j]);
+vector<vector<double>> apply_cosine_similarity(vector<vector<double>> user_item_matrix) {
+    int num_users = user_item_matrix.size();
+    vector<vector<double>> similarity_matrix(num_users, vector<double>(num_users, 0));
+    for (int i = 0; i < num_users; i++) {
+        for (int j = 0; j < num_users; j++) {
+            similarity_matrix[i][j] = cosine_similarity(user_item_matrix[i], user_item_matrix[j]);
         }
-        if (i % 200 == 0) {
-            cout << "Progress: " << i / (double)size << endl;
+        if (i % 100 == 0) {
+            cout << "Done with " << i / (double) num_users << " users" << endl;
         }
     }   
     return similarity_matrix;
 }
 
-
 int main() {
     CSV train("train");
-    CSV test(string("test"));
+    CSV test("test");
     
     int total_unique_users = train.get_unique_users();
     int total_unique_items = train.get_unique_items();
@@ -272,7 +256,7 @@ int main() {
         double final_prediction = (ubcf_ratings[i] + ibcf_ratings[i]) / 2.0;
         // round the final prediction to the nearest half integer
         // final_prediction = llround(final_prediction * 2) / 2.0;
-        fout3 << test.data[i][0] << "," << final_prediction << endl;
+        fout3 << test.data[i][0] << "," << to_string(final_prediction) << endl;
     }
 
     return 0;
