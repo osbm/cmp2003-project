@@ -134,8 +134,6 @@ int main() {
     vector<vector<float>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
     vector<vector<float>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
 
-    
-
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
     vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
     
@@ -190,7 +188,7 @@ int main() {
         if (denominator != 0) {
             user_based_rating = numerator / denominator;
         } else {
-            user_based_rating = 3.0;
+            user_based_rating = 4.0;
         }
 
         ubcf_ratings[i] = user_based_rating;
@@ -249,7 +247,7 @@ int main() {
             item_based_rating = numerator / denominator;
         } else {
             print("denominator == 0");
-            item_based_rating = 3.0;
+            item_based_rating = 4.0;
         }
 
         ibcf_ratings[i] = item_based_rating;
@@ -267,7 +265,10 @@ int main() {
     ofstream fout3("submission.csv");
     fout3 << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout3 << test.data[i][0] << "," << (ubcf_ratings[i] + ibcf_ratings[i]) / 2.0 << endl;
+        float final_prediction = (ubcf_ratings[i] + ibcf_ratings[i]) / 2.0;
+        // round the final prediction to the nearest half integer
+        final_prediction = llround(final_prediction * 2) / 2.0;
+        fout3 << test.data[i][0] << "," << final_prediction << endl;
     }
 
     return 0;
