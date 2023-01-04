@@ -32,12 +32,8 @@ vector<vector<int>> CSV::read_csv(string filename) {
         }
 
         while (getline(ss, cell, ',')) {
-            // in training data
-            // first two columns are integers and the last column is a float
-            // in test data all columns are integers
-
             if (cell.find('.') != string::npos) {
-                float f = stof(cell);
+                double f = stof(cell);
                 f = f * 2;
                 int i = f;
                 row.push_back(i);
