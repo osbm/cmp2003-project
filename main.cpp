@@ -16,24 +16,24 @@ void print(T t) {
     cout << t << endl;
 }
 
-vector<vector<int>> get_user_item_matrix(vector<vector<int>> data, int num_users, int num_items) {
-    vector<vector<int>> user_item_matrix(num_users, vector<int>(num_items, 0));
+vector<vector<float>> get_user_item_matrix(vector<vector<int>> data, int num_users, int num_items) {
+    vector<vector<float>> user_item_matrix(num_users, vector<float>(num_items, 0));
     for (int i = 0; i < data.size(); i++) {
         int user = data[i][0];
         int item = data[i][1];
         int rating = data[i][2];
-        user_item_matrix[user][item] = rating;
+        user_item_matrix[user][item] = rating / 2.0;
     }
     return user_item_matrix;
 }
 
-vector<vector<int>> get_item_user_matrix(vector<vector<int>> data, int num_users, int num_items) {
-    vector<vector<int>> item_user_matrix(num_items, vector<int>(num_users, 0));
+vector<vector<float>> get_item_user_matrix(vector<vector<int>> data, int num_users, int num_items) {
+    vector<vector<float>> item_user_matrix(num_items, vector<float>(num_users, 0));
     for (int i = 0; i < data.size(); i++) {
         int user = data[i][0];
         int item = data[i][1];
         int rating = data[i][2];
-        item_user_matrix[item][user] = rating;
+        item_user_matrix[item][user] = rating / 2.0;
     }
     return item_user_matrix;
 }
@@ -50,7 +50,7 @@ float cosine_similarity(vector<int> v1, vector<int> v2) {
     return dot_product / (sqrt(norm1) * sqrt(norm2));
 }
 
-float vector_magnitude(vector<int>& vec) {
+float vector_magnitude(vector<float>& vec) {
     float sum = 0;
     for (int i : vec) {
         sum += i * i;
@@ -58,7 +58,7 @@ float vector_magnitude(vector<int>& vec) {
     return sqrt(sum);
 }
 
-float dot_product(vector<int>& vec1, vector<int>& vec2) {
+float dot_product(vector<float>& vec1, vector<float>& vec2) {
     float sum = 0;
     for (int i = 0; i < vec1.size(); i++) {
         sum += vec1[i] * vec2[i];
@@ -67,7 +67,7 @@ float dot_product(vector<int>& vec1, vector<int>& vec2) {
 }
 
 
-vector<vector<float>> apply_cosine_similarity(vector<vector<int>>& matrix) {
+vector<vector<float>> apply_cosine_similarity(vector<vector<float>>& matrix) {
     int size = matrix.size();
     vector<vector<float>> similarity_matrix(size, vector<float>(size, 0));
     unordered_map<int, float> dot_products;
@@ -131,8 +131,11 @@ int main() {
         test.data[i][2] = item_id_map[test.data[i][2]];
     }
 
-    vector<vector<int>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
-    vector<vector<int>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
+    vector<vector<float>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
+    vector<vector<float>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
+
+    
+
     vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
     vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
     
@@ -163,7 +166,7 @@ int main() {
         int item_id = test.data[i][2];
         float user_based_rating = 0;
         vector<float> user_similarity_scores = user_similarity[user_id];
-        vector<int> item_ratings = user_item_matrix[item_id];
+        vector<float> item_ratings = user_item_matrix[item_id];
         vector<int> rated_item_indices;
         for (int j = 0; j < item_ratings.size(); j++) {
             if (item_ratings[j] != 0) {
@@ -186,7 +189,10 @@ int main() {
         }
         if (denominator != 0) {
             user_based_rating = numerator / denominator;
+        } else {
+            user_based_rating = 3.0;
         }
+
         ubcf_ratings[i] = user_based_rating;
     }
 
@@ -194,7 +200,7 @@ int main() {
     ofstream fout2("ubcf.csv");
     fout2 << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout2 << test.data[i][0] << "," << ubcf_ratings[i] / 2.0 << endl;
+        fout2 << test.data[i][0] << "," << ubcf_ratings[i] << endl;
     }
 
     vector<float> ibcf_ratings(test.data.size(), 0);
@@ -212,7 +218,7 @@ int main() {
             continue;
         }
         // select only the items that the user has rated
-        vector<int> user_ratings = user_item_matrix[user_id];
+        vector<float> user_ratings = user_item_matrix[user_id];
         // print(user_ratings.size());
         vector<int> rated_item_indices;
         for (int j = 0; j < user_ratings.size(); j++) {
@@ -243,13 +249,10 @@ int main() {
             item_based_rating = numerator / denominator;
         } else {
             print("denominator == 0");
-            item_based_rating = 10;
+            item_based_rating = 3.0;
         }
 
         ibcf_ratings[i] = item_based_rating;
-        
-
-
         
     }
 
@@ -257,14 +260,14 @@ int main() {
     ofstream fout("ibcf.csv");
     fout << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout << test.data[i][0] << "," << ibcf_ratings[i] / 2.0 << endl;
+        fout << test.data[i][0] << "," << ibcf_ratings[i]<< endl;
     }
 
     printf("Writing the result to a file...\n");
     ofstream fout3("submission.csv");
     fout3 << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout3 << test.data[i][0] << "," << (ubcf_ratings[i] + ibcf_ratings[i]) / 4.0 << endl;
+        fout3 << test.data[i][0] << "," << (ubcf_ratings[i] + ibcf_ratings[i]) / 2.0 << endl;
     }
 
     return 0;
