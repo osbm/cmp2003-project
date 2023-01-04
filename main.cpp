@@ -74,7 +74,11 @@ vector<vector<double>> apply_cosine_similarity(vector<vector<double>>& matrix) {
     unordered_map<int, double> magnitudes;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            if (i == j) similarity_matrix[i][j] = 1;
+            if (i == j) {
+                similarity_matrix[i][j] = 1;
+                continue;
+            }
+            
             if (dot_products.count(i) == 0) {
                 dot_products[i] = dot_product(matrix[i], matrix[i]);
                 magnitudes[i] = vector_magnitude(matrix[i]);
