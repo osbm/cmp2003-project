@@ -33,7 +33,7 @@ vector<vector<int>> CSV::read_csv(string filename) {
 
         while (getline(ss, cell, ',')) {
             if (cell.find('.') != string::npos) {
-                double f = stof(cell);
+                float f = stof(cell);
                 f = f * 2;
                 int i = f;
                 row.push_back(i);
