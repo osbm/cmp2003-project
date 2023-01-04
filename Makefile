@@ -2,9 +2,10 @@
 # define the C++ compiler to use
 CCXX=g++
 
-
+# ignore sign compare warning
+CFLAGS = -Wall -O3 -Wno-sign-compare -fstack-check -fstack-protector-all
 # fast debug
-CFLAGS = -Wall -O3 -DDEBUG #-fstack-check -fstack-protector-all
+
 
 
 all: main.o csv.o #rmse_metric.o
