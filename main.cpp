@@ -8,7 +8,7 @@
 #include <set>
 #include <cmath>
 #include <unordered_map>
-
+#include <chrono>
 using namespace std;
 
 template <typename T>
@@ -31,9 +31,6 @@ vector<vector<float>> get_user_item_matrix(vector<vector<int>> data, int num_use
 vector<vector<float>> get_item_user_matrix(vector<vector<int>> data, int num_users, int num_items) {
     vector<vector<float>> item_user_matrix(num_items, vector<float>(num_users, 0));
 
-vector<vector<int>> get_item_user_matrix(vector<vector<int>> data, int num_users, int num_items) {
-    vector<vector<int>> item_user_matrix(num_items, vector<int>(num_users, 0));
-
     for (int i = 0; i < data.size(); i++) {
         int user = data[i][0];
         int item = data[i][1];
@@ -44,7 +41,7 @@ vector<vector<int>> get_item_user_matrix(vector<vector<int>> data, int num_users
     return item_user_matrix;
 }
 
-float cosine_similarity(vector<float> v1, vector<float> v2) {
+float cosine_similarity(vector<float>& v1, vector<float>& v2) {
     float dot_product = 0;
     float norm1 = 0;
     float norm2 = 0;
@@ -73,6 +70,17 @@ float dot_product(vector<float>& vec1, vector<float>& vec2) {
     return sum;
 }
 
+float rmse(vector<vector<float>> predictions, vector<vector<int>> data) {
+    float sum = 0;
+    for (int i = 0; i < data.size(); i++) {
+        int user = data[i][0];
+        int item = data[i][1];
+        int rating = data[i][2];
+        sum += (predictions[user][item] - rating) * (predictions[user][item] - rating);
+    }
+    return sqrt(sum / data.size());
+}
+
 
 vector<vector<float>> apply_cosine_similarity(vector<vector<float>>& matrix) {
     int size = matrix.size();
@@ -98,10 +106,47 @@ vector<vector<float>> apply_cosine_similarity(vector<vector<float>>& matrix) {
     }   
     return similarity_matrix;
 }
+vector<vector<float>> unordered_cosine_similarity(vector<vector<float>> user_item_matrix) {
+    int num_users = user_item_matrix.size();
+    unordered_map<int, unordered_map<int, float>> similarity_matrix;
+    for (int i = 0; i < num_users; i++) {
+        for (int j = 0; j < num_users; j++) {
+            similarity_matrix[i][j] = cosine_similarity(user_item_matrix[i], user_item_matrix[j]);
+        }
+        if (i % 100 == 0) {
+            cout << "Progress: " << i/ (float) num_users << endl;
+        }
+    }   
+    vector<vector<float>> v(similarity_matrix.size());
+    for (const auto& kv : similarity_matrix) {
+        int i = kv.first;
+        const auto& inner_map = kv.second;
+        v[i].resize(inner_map.size());
+        for (const auto& inner_kv : inner_map) {
+            int j = inner_kv.first;
+            v[i][j] = inner_kv.second;
+        }
+    }
+    return v;
+}
+
+vector<vector<float>> apply_old_cosine_similarity(vector<vector<float>> user_item_matrix) {
+    int num_users = user_item_matrix.size();
+    vector<vector<float>> similarity_matrix(num_users, vector<float>(num_users, 0));
+    for (int i = 0; i < num_users; i++) {
+        for (int j = 0; j < num_users; j++) {
+            similarity_matrix[i][j] = cosine_similarity(user_item_matrix[i], user_item_matrix[j]);
+        }
+        if (i % 100 == 0) {
+            cout << "Progress: " << i/ (float) num_users << endl;
+        }
+    }   
+    return similarity_matrix;
+}
+
 
 int main() {
     CSV train("train");
-
     CSV test("test");
     
     int total_unique_users = train.get_unique_users();
@@ -138,16 +183,35 @@ int main() {
         test.data[i][2] = item_id_map[test.data[i][2]];
     }
 
+    // crop 15 thousand ratings from the end of train data to use as validation data
+    // vector<vector<int>> validation_data;
+    // for (int i = 0; i < 15000; i++) {
+    //     validation_data.push_back(train.data[train.data.size() - 1]);
+    //     train.data.pop_back();
+    // }
+
     vector<vector<float>> user_item_matrix = get_user_item_matrix(train.data, total_unique_users, total_unique_items);
     vector<vector<float>> item_user_matrix = get_item_user_matrix(train.data, total_unique_users, total_unique_items);
 
-    vector<vector<float>> user_similarity = apply_cosine_similarity(user_item_matrix);
-    vector<vector<float>> item_similarity = apply_cosine_similarity(item_user_matrix);
+    cout << "Starting cosine similarity" << endl;
+    auto start = chrono::high_resolution_clock::now();
+    vector<vector<float>> user_similarity = unordered_cosine_similarity(user_item_matrix);
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+    cout << "User Cosine similarity took " << duration.count() / 1000.0 << " seconds" << endl;
     
+    cout << "Starting cosine similarity" << endl;
+    start = chrono::high_resolution_clock::now();
+    vector<vector<float>> item_similarity = unordered_cosine_similarity(item_user_matrix);
+    end = chrono::high_resolution_clock::now();
+    duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+    cout << "Item cosine similarity took " << duration.count() / 1000.0 << " seconds" << endl;
+
+
     // print 10 by 10 portion of user similarity matrix and item similarity matrix
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 10; j++) {
-            cout << user_similarity[i][j] << " ";
+            cout << user_similarity[i][j] << "\t";
         }
         cout << endl;
     }
@@ -161,14 +225,10 @@ int main() {
     cout << endl;
 
 
+    print("Starting caculating ubcf\n");
     vector<float> ubcf_ratings(test.data.size(), 0);
 
-    printf("Starting inference\n");
     for (int i = 0; i < test.data.size(); i++) {
-        if (i % 100 == 0) {
-            cout << "Progress: " << i / 5000.0 << endl;
-        }
-        
 
         int user_id = test.data[i][1];
         int item_id = test.data[i][2];
@@ -205,13 +265,14 @@ int main() {
         ubcf_ratings[i] = user_based_rating;
     }
 
-    printf("Writing the result to a file...\n");
-    ofstream fout2("ubcf.csv");
-    fout2 << "Id,Predicted" << endl;
+    print("Writing the UBCF result to a file...\n");
+    ofstream fout1("ubcf.csv");
+    fout1 << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout2 << test.data[i][0] << "," << ubcf_ratings[i] << endl;
+        fout1 << test.data[i][0] << "," << ubcf_ratings[i] << endl;
     }
 
+    print("Starting calculating ibcf\n");
     vector<float> ibcf_ratings(test.data.size(), 0);
     for (int i = 0; i < 5000; i++) {
      
@@ -265,103 +326,22 @@ int main() {
         
     }
 
-    printf("Writing the result to a file...\n");
-    ofstream fout("ibcf.csv");
-
-        printf("error catcher 2\n");
-        vector<float> user_similarity_scores = user_similarity[user_id - 1];
-        vector<float> item_similarity_scores = item_similarity[item_id - 1];
-        printf("error catcher 3\n");
-
-        vector<int> item_ratings = user_item_matrix[item_id];
-        vector<int> user_ratings = item_user_matrix[user_id];
-        printf("error catcher 4\n");
-
-        printf("error catcher 5\n");
-        // get rated user_ids and rated item_ids
-        vector<int> rated_user_ids;
-        vector<int> rated_item_ids;
-        printf("error catcher 6\n");
-
-        for (int j = 0; j < item_ratings.size(); j++) {
-            if (item_ratings[j] != 0) {
-                rated_user_ids.push_back(j);
-            }
-        }
-
-        for (int j = 0; j < user_ratings.size(); j++) {
-            if (user_ratings[j] != 0) {
-                rated_item_ids.push_back(j);
-            }
-        }
-
-        printf("error catcher 7");
-        // get the similarity scores of the rated users and rated items
-        vector<float> rated_user_similarity_scores;
-        vector<float> rated_item_similarity_scores;
-
-        for (int j = 0; j < rated_user_ids.size(); j++) {
-            rated_user_similarity_scores.push_back(user_similarity_scores[rated_user_ids[j]]);
-        }
-
-        for (int j = 0; j < rated_item_ids.size(); j++) {
-            rated_item_similarity_scores.push_back(item_similarity_scores[rated_item_ids[j]]);
-        }
-
-        printf("error catcher 8");
-        // get the ratings of the rated users and rated items
-
-        vector<int> user_ratings_of_rated_users;
-        vector<int> item_ratings_of_rated_items;
-
-        for (int j = 0; j < rated_user_ids.size(); j++) {
-            user_ratings_of_rated_users.push_back(user_ratings[rated_user_ids[j]]);
-        }
-
-        for (int j = 0; j < rated_item_ids.size(); j++) {
-            item_ratings_of_rated_items.push_back(item_ratings[rated_item_ids[j]]);
-        }
-        printf("error catcher 9");
-        // calculate the weighted average of the ratings of the rated users and rated items
-        float user_based = 0;
-        float item_based = 0;
-
-        float user_based_denominator = 0;
-        float item_based_denominator = 0;
-
-        for (int j = 0; j < rated_user_ids.size(); j++) {
-            user_based += rated_user_similarity_scores[j] * user_ratings_of_rated_users[j];
-            user_based_denominator += rated_user_similarity_scores[j];
-        }
-
-        for (int j = 0; j < rated_item_ids.size(); j++) {
-            item_based += rated_item_similarity_scores[j] * item_ratings_of_rated_items[j];
-            item_based_denominator += rated_item_similarity_scores[j];
-        }
-
-        user_based /= user_based_denominator;
-        item_based /= item_based_denominator;
-        printf("error catcher 10");
-
-        float rating = (user_based + item_based) / 2.0;
-
-        predicted_ratings[i] = rating;
-    }
-    printf("Inference complete\n");
-    // write the result to a file
-    ofstream fout("submission.csv");
-
-    fout << "Id,Predicted" << endl;
+    print("Writing the result to a file...\n");
+    ofstream fout2("ibcf.csv");
+    fout2 << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
-        fout << test.data[i][0] << "," << ibcf_ratings[i]<< endl;
+        fout2 << test.data[i][0] << "," << ibcf_ratings[i] << endl;
     }
 
-    printf("Writing the result to a file...\n");
+
+    // make predictions on validation_data
+
+    
+    print("Writing the result to a file...\n");
     ofstream fout3("submission.csv");
     fout3 << "Id,Predicted" << endl;
     for (int i = 0; i < test.data.size(); i++) {
         float final_prediction = (ubcf_ratings[i] + ibcf_ratings[i]) / 2.0;
-        // round the final prediction to the nearest half integer
         // final_prediction = llround(final_prediction * 2) / 2.0;
         fout3 << test.data[i][0] << "," << to_string(final_prediction) << endl;
     }
