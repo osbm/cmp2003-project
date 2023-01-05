@@ -165,8 +165,8 @@ int main () {
         }
         prediction = sum / sum_of_similarities;
 
-        if (isnan(prediction)) {
-            prediction = 4.25;
+        if (isnan(prediction) || isinf(prediction) || prediction < 0 || prediction > 5) {
+            prediction = 4.0;
         }
 
         ubcf_predictions.push_back(prediction);
@@ -249,8 +249,8 @@ int main () {
         }
 
         prediction = sum / sum_of_similarities;
-        if (isnan(prediction)) {
-            prediction = 4.25;
+        if (isnan(prediction) || isinf(prediction) || prediction < 0 || prediction > 5) {
+            prediction = 4.0;
         }
         ibcf_predictions.push_back(prediction);
     }
