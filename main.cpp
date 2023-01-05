@@ -188,7 +188,7 @@ int main () {
         prediction = sum / sum_of_similarities;
 
         if (isnan(prediction)) {
-            prediction = 3.47;
+            prediction = 3.7;
         }
 
         ubcf_predictions.push_back(prediction);
@@ -272,7 +272,7 @@ int main () {
 
         prediction = sum / sum_of_similarities;
         if (isnan(prediction)) {
-            prediction = 3.47;
+            prediction = 3.7;
         }
         ibcf_predictions.push_back(prediction);
     }
