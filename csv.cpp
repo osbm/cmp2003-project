@@ -62,30 +62,6 @@ int CSV::save_csv (string filename, vector<vector<int>> data) const {
     }
     return 0;
 }
-/*
-int CSV::get_rows(string filename) {
-    ifstream file(filename);
-    string line;
-    int rows = 0;
-    while (getline(file, line)) {
-        rows++;
-    }
-    return rows;
-}
-
-int CSV::get_cols(string filename) {
-    ifstream file(filename);
-    string line;
-    getline(file, line);
-    stringstream ss(line);
-    string cell;
-    int cols = 0;
-    while (getline(ss, cell, DELIM)) {
-        cols++;
-    }
-    return cols;
-}
-*/
 
 CSV::CSV(string subset_string) {
     subset = subset_string;
@@ -116,20 +92,23 @@ int CSV::get_unique_items() {
     items.erase(unique(items.begin(), items.end()), items.end());
     return items.size();
 }
-/*
-void CSV::reset_ids() {
-    vector<int> users;
-    vector<int> items;
+
+int CSV::get_item_count(int item) {
+    int count = 0;
     for (int i = 0; i < data.size(); i++) {
-        users.push_back(data[i][0]);
-        items.push_back(data[i][1]);
+        if (data[i][1] == item) {
+            count++;
+        }
     }
-    sort(users.begin(), users.end());
-    users.erase(unique(users.begin(), users.end()), users.end());
-    sort(items.begin(), items.end());
-    items.erase(unique(items.begin(), items.end()), items.end());
+    return count;
+}
+
+int CSV::get_user_count(int user) {
+    int count = 0;
     for (int i = 0; i < data.size(); i++) {
-        data[i][0] = find(users.begin(), users.end(), data[i][0]) - users.begin();
-        data[i][1] = find(items.begin(), items.end(), data[i][1]) - items.begin();
+        if (data[i][0] == user) {
+            count++;
+        }
     }
-}*/
+    return count;
+}

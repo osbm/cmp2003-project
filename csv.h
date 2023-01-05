@@ -28,12 +28,10 @@ class CSV {
         vector<vector<int>> data;
         vector<vector<int>> read_csv(string filename);
         int save_csv(string filename, vector<vector<int>> data) const;
-        
-        // int get_rows(string filename);
-        // int get_cols(string filename);
         int get_unique_users();
         int get_unique_items();
-        // void reset_ids();
+        int get_item_count(int item);
+        int get_user_count(int user);
         string subset;
         CSV(string subset);
         
