@@ -38,28 +38,6 @@ vector<vector<float>> get_item_user_matrix(vector<vector<int>> data, int num_use
     return pivoted_data;
 }
 
-// calculate cosine user_similarity_matrix (num_user x num_user) using unordered_map structure
-unordered_map<int, unordered_map<int, float>> get_user_similarity_matrix(vector<vector<float>> pivoted_data) {
-    unordered_map<int, unordered_map<int, float>> user_similarity_matrix;
-    for (int i = 0; i < pivoted_data.size(); i++) {
-        for (int j = i + 1; j < pivoted_data.size(); j++) {
-            float dot_product = 0;
-            float norm_i = 0;
-            float norm_j = 0;
-            for (int k = 0; k < pivoted_data[i].size(); k++) {
-                dot_product += pivoted_data[i][k] * pivoted_data[j][k];
-                norm_i += pivoted_data[i][k] * pivoted_data[i][k];
-                norm_j += pivoted_data[j][k] * pivoted_data[j][k];
-            }
-            float similarity = dot_product / (sqrt(norm_i) * sqrt(norm_j));
-            user_similarity_matrix[i][j] = similarity;
-            user_similarity_matrix[j][i] = similarity;
-        }
-        if (i % 100 == 0) {
-            cout << "Finished " << i << " users" << endl;
-        }
-    }
-}
 
 float cosine_similarity(vector<float> v1, vector<float> v2) {
     float dot_product = 0;
@@ -143,7 +121,7 @@ int main () {
             } else {
                 similarities.push_back(0);
             }
-        }  
+        }
 
         // sort the similarities
         // sort(similarities.begin(), similarities.end(), greater<float>());
@@ -188,7 +166,7 @@ int main () {
         prediction = sum / sum_of_similarities;
 
         if (isnan(prediction)) {
-            prediction = 3.7;
+            prediction = 4.25;
         }
 
         ubcf_predictions.push_back(prediction);
@@ -272,7 +250,7 @@ int main () {
 
         prediction = sum / sum_of_similarities;
         if (isnan(prediction)) {
-            prediction = 3.7;
+            prediction = 4.25;
         }
         ibcf_predictions.push_back(prediction);
     }
