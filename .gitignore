@@ -31,6 +31,7 @@
 *.out
 *.app
 main
+top_users_and_items
 
 # editor configuration folders
 .vscode
