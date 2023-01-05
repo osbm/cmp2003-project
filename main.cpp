@@ -146,28 +146,63 @@ int main () {
         }  
 
         // sort the similarities
-        sort(similarities.begin(), similarities.end(), greater<float>());
+        // sort(similarities.begin(), similarities.end(), greater<float>());
 
-        // get the top 10 similarities
-        vector<float> top_similarities;
-        for (int j = 0; j < 10; j++) {
-            top_similarities.push_back(similarities[j]);
+        // get all ratings of user
+        vector<float> ratings;
+        for (int j = 0; j < user_item_matrix[user].size(); j++) {
+            if (user_item_matrix[user][j] != 0) {
+                ratings.push_back(user_item_matrix[user][j]);
+            }
         }
 
-        // average the top 10 similarities
+        // get the indices of the movies that have been rated by the user
+        vector<int> indices;
+        for (int j = 0; j < user_item_matrix[user].size(); j++) {
+            if (user_item_matrix[user][j] != 0) {
+                indices.push_back(j);
+            }
+        }
+
+        // get the similarity scores of the movies that have been rated by the user
+        vector<float> similarity_scores;
+        for (int j = 0; j < indices.size(); j++) {
+            similarity_scores.push_back(similarities[indices[j]]);
+        }
+
+
+        // get the movie ratings of the movies that have been rated by the user
+        vector<float> movie_ratings;
+        for (int j = 0; j < indices.size(); j++) {
+            movie_ratings.push_back(user_item_matrix[user][indices[j]]);
+        }
+
+        // calculate the weighted average of the movie ratings
+
         float sum = 0;
-        for (int j = 0; j < top_similarities.size(); j++) {
-            sum += top_similarities[j];
+        float sum_of_similarities = 0;
+        for (int j = 0; j < movie_ratings.size(); j++) {
+            sum += movie_ratings[j] * similarity_scores[j];
+            sum_of_similarities += similarity_scores[j];
+        }
+        prediction = sum / sum_of_similarities;
+
+        if (isnan(prediction)) {
+            prediction = 4.0;
         }
 
-        float average = sum / top_similarities.size();
-
-        ubcf_predictions.push_back(average);
+        ubcf_predictions.push_back(prediction);
     }
-
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
     cout << "Time taken by function: " << duration.count() / 1000.0 << " seconds" << endl;
+
+    print("Saving UBCF predictions to ubcf.csv file");
+    ofstream ubcf_file("ubcf.csv");
+    ubcf_file << "Id,Predicted" << endl;
+    for (int i = 0; i < ubcf_predictions.size(); i++) {
+        ubcf_file << test.data[i][0] << "," << to_string(ubcf_predictions[i]) << endl;
+    }
 
 
     cout << "Starting item based prediction" << endl;
@@ -196,28 +231,62 @@ int main () {
         }  
 
         // sort the similarities
-        sort(similarities.begin(), similarities.end(), greater<float>());
+        // sort(similarities.begin(), similarities.end(), greater<float>());
 
-        // get the top 10 similarities
-        vector<float> top_similarities;
-        for (int j = 0; j < 10; j++) {
-            top_similarities.push_back(similarities[j]);
+        // get all ratings of user
+        vector<float> ratings;
+        for (int j = 0; j < item_user_matrix[item].size(); j++) {
+            if (item_user_matrix[item][j] != 0) {
+                ratings.push_back(item_user_matrix[item][j]);
+            }
         }
 
-        // average the top 10 similarities
+        // get the indices of the movies that have been rated by the user
+        vector<int> indices;
+        for (int j = 0; j < item_user_matrix[item].size(); j++) {
+            if (item_user_matrix[item][j] != 0) {
+                indices.push_back(j);
+            }
+        }
+
+        // get the similarity scores of the movies that have been rated by the user
+        vector<float> similarity_scores;
+        for (int j = 0; j < indices.size(); j++) {
+            similarity_scores.push_back(similarities[indices[j]]);
+        }
+
+        // get the movie ratings of the movies that have been rated by the user
+        vector<float> movie_ratings;
+        for (int j = 0; j < indices.size(); j++) {
+            movie_ratings.push_back(item_user_matrix[item][indices[j]]);
+        }
+
+        // calculate the weighted average of the movie ratings
+
         float sum = 0;
-        for (int j = 0; j < top_similarities.size(); j++) {
-            sum += top_similarities[j];
+        float sum_of_similarities = 0;
+        for (int j = 0; j < movie_ratings.size(); j++) {
+            sum += movie_ratings[j] * similarity_scores[j];
+            sum_of_similarities += similarity_scores[j];
         }
 
-        float average = sum / top_similarities.size();
-
-        ibcf_predictions.push_back(average);
+        prediction = sum / sum_of_similarities;
+        if (isnan(prediction)) {
+            prediction = 4.0;
+        }
+        ibcf_predictions.push_back(prediction);
     }
 
     stop = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
     cout << "Time taken by function: " << duration.count() / 1000.0 << " seconds" << endl;
+
+    print("Saving IBCF predictions to ibcf.csv file");
+    ofstream ibcf_file("ibcf.csv");
+    ibcf_file << "Id,Predicted" << endl;
+    for (int i = 0; i < ibcf_predictions.size(); i++) {
+        ibcf_file << test.data[i][0] << "," << to_string(ibcf_predictions[i]) << endl;
+    }
 
 
     // write the predictions to a file
